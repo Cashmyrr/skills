@@ -291,6 +291,56 @@ Create `src/app/webhooks/webhooks-hsmeta.json`:
 
 Use `crmObjects` for new-format events (`object.*`). Use `legacyCrmObjects` for classic types like `contact.creation`. Use `hubEvents` for `contact.privacyDeletion` and `conversation.*`.
 
+### Webhook Signature Validation (Required)
+
+**Every incoming webhook request from HubSpot MUST be validated using the v3 signature.** Skipping this check is a security vulnerability — any server could send fake payloads to your endpoint.
+
+HubSpot signs requests with the `X-HubSpot-Signature-v3` header. Validate it using `@hubspot/api-client`:
+
+```js
+const express = require("express");
+const { Signature } = require("@hubspot/api-client");
+
+const app = express();
+app.use(express.json());
+
+app.post("/webhook", async (req, res) => {
+  const signatureV3 = req.header("X-HubSpot-Signature-v3");
+  const timestamp = req.header("X-HubSpot-Request-Timestamp");
+  const url = `${req.protocol}://${req.header("host")}${req.url}`;
+
+  // Reject requests older than 5 minutes to prevent replay attacks
+  if (parseInt(timestamp) < Date.now() - 5 * 60 * 1000) {
+    return res.status(400).json({ error: "Timestamp too old" });
+  }
+
+  const isValid = Signature.isValid({
+    signatureVersion: "v3",
+    signature: signatureV3,
+    method: req.method,
+    clientSecret: process.env.CLIENT_SECRET,
+    requestBody: req.body,
+    url,
+    timestamp,
+  });
+
+  if (!isValid) return res.status(401).json({ error: "Invalid signature" });
+
+  // Process events
+  for (const event of req.body) {
+    console.log(`Event: ${event.subscriptionType}`, event);
+  }
+
+  res.status(200).json({ received: true });
+});
+```
+
+Key rules:
+- `CLIENT_SECRET` is your app's client secret (never hardcode it — use environment variables)
+- Always reject requests where the timestamp is older than 5 minutes (replay attack prevention)
+- Return `200` quickly; process events asynchronously if needed to avoid HubSpot timeouts
+- Install the client: `npm install @hubspot/api-client`
+
 ## `package.json` for UI Extensions
 
 ```json
