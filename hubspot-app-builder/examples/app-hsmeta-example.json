@@ -1,0 +1,32 @@
+{
+  "uid": "my_app_uid",
+  "type": "app",
+  "config": {
+    "name": "My HubSpot App",
+    "description": "An example HubSpot app built on platform 2025.2.",
+    "distribution": "marketplace",
+    "auth": {
+      "type": "oauth",
+      "redirectUrls": ["http://localhost:3000/oauth-callback"],
+      "requiredScopes": [
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write",
+        "crm.objects.companies.read"
+      ],
+      "optionalScopes": [
+        "crm.objects.deals.read"
+      ],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": ["https://api.example.com"],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "support@example.com",
+      "documentationUrl": "https://example.com/docs",
+      "supportUrl": "https://example.com/support"
+    }
+  }
+}

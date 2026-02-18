@@ -1,0 +1,11 @@
+{
+  "uid": "contact-enrichment-card",
+  "type": "card",
+  "config": {
+    "name": "Contact Enrichment",
+    "description": "Enriches contact data from external sources.",
+    "location": "crm.record.tab",
+    "entrypoint": "/app/cards/ContactEnrichment.jsx",
+    "objectTypes": ["contacts"]
+  }
+}
