@@ -309,42 +309,19 @@ src/app/workflow-actions/
 
 ### Handling Webhook Payloads (Node.js Example)
 
+HubSpot signs both webhook deliveries and card / settings page fetch requests with `X-HubSpot-Signature-v3`. Validate the signature on every incoming request from HubSpot.
+
+For the full validation implementation (reusable helper, webhook example, card fetch example), see [`signature-validation.md`](signature-validation.md).
+
+Quick usage:
+
 ```js
-const express = require("express");
-const { Signature } = require("@hubspot/api-client");
-
-const app = express();
-app.use(express.json());
-
 app.post("/webhook", async (req, res) => {
-  // Validate HubSpot signature
-  const signatureV3 = req.header("X-HubSpot-Signature-v3");
-  const timestamp = req.header("X-HubSpot-Request-Timestamp");
-  const url = `${req.protocol}://${req.header("host")}${req.url}`;
+  if (!validateHubSpotSignature(req, res)) return;
 
-  // Reject if timestamp older than 5 minutes
-  if (parseInt(timestamp) < Date.now() - 5 * 60 * 1000) {
-    return res.status(400).json({ error: "Timestamp too old" });
-  }
-
-  const isValid = Signature.isValid({
-    signatureVersion: "v3",
-    signature: signatureV3,
-    method: req.method,
-    clientSecret: process.env.CLIENT_SECRET,
-    requestBody: req.body,
-    url,
-    timestamp,
-  });
-
-  if (!isValid) return res.status(401).json({ error: "Invalid signature" });
-
-  // Process the webhook events
-  const events = req.body;
-  for (const event of events) {
+  for (const event of req.body) {
     console.log(`Event: ${event.subscriptionType}`, event);
   }
-
   res.status(200).json({ received: true });
 });
 ```

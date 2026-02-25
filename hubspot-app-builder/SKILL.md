@@ -216,7 +216,9 @@ Requirements:
 - Add the URL to `permittedUrls.fetch` in `app-hsmeta.json`
 - URLs must use HTTPS (no localhost — use proxy for local dev)
 - Max 20 concurrent requests per account; 15s timeout; 1MB payload limit
-- No custom headers except `Authorization`; HubSpot signs requests automatically
+- No custom headers except `Authorization`; HubSpot signs requests automatically with `X-HubSpot-Signature-v3`
+
+**Your backend must validate `X-HubSpot-Signature-v3` on every request coming from a CRM card or settings page fetch.** This is the same validation required for webhooks — use `Signature.isValid()` from `@hubspot/api-client`. Without it, anyone can send fake requests to your endpoint.
 
 For local dev proxy, create `local.json` in the project root:
 ```json
@@ -291,55 +293,13 @@ Create `src/app/webhooks/webhooks-hsmeta.json`:
 
 Use `crmObjects` for new-format events (`object.*`). Use `legacyCrmObjects` for classic types like `contact.creation`. Use `hubEvents` for `contact.privacyDeletion` and `conversation.*`.
 
-### Webhook Signature Validation (Required)
+### Signature Validation (Required)
 
-**Every incoming webhook request from HubSpot MUST be validated using the v3 signature.** Skipping this check is a security vulnerability — any server could send fake payloads to your endpoint.
+HubSpot signs all outbound requests with `X-HubSpot-Signature-v3`:
+- **Webhook deliveries** — HubSpot POSTs event payloads to your `targetUrl`
+- **Card / settings page fetch** — any `hubspot.fetch()` call from a UI extension is proxied and signed by HubSpot
 
-HubSpot signs requests with the `X-HubSpot-Signature-v3` header. Validate it using `@hubspot/api-client`:
-
-```js
-const express = require("express");
-const { Signature } = require("@hubspot/api-client");
-
-const app = express();
-app.use(express.json());
-
-app.post("/webhook", async (req, res) => {
-  const signatureV3 = req.header("X-HubSpot-Signature-v3");
-  const timestamp = req.header("X-HubSpot-Request-Timestamp");
-  const url = `${req.protocol}://${req.header("host")}${req.url}`;
-
-  // Reject requests older than 5 minutes to prevent replay attacks
-  if (parseInt(timestamp) < Date.now() - 5 * 60 * 1000) {
-    return res.status(400).json({ error: "Timestamp too old" });
-  }
-
-  const isValid = Signature.isValid({
-    signatureVersion: "v3",
-    signature: signatureV3,
-    method: req.method,
-    clientSecret: process.env.CLIENT_SECRET,
-    requestBody: req.body,
-    url,
-    timestamp,
-  });
-
-  if (!isValid) return res.status(401).json({ error: "Invalid signature" });
-
-  // Process events
-  for (const event of req.body) {
-    console.log(`Event: ${event.subscriptionType}`, event);
-  }
-
-  res.status(200).json({ received: true });
-});
-```
-
-Key rules:
-- `CLIENT_SECRET` is your app's client secret (never hardcode it — use environment variables)
-- Always reject requests where the timestamp is older than 5 minutes (replay attack prevention)
-- Return `200` quickly; process events asynchronously if needed to avoid HubSpot timeouts
-- Install the client: `npm install @hubspot/api-client`
+Both must be validated the same way using `Signature.isValid()` from `@hubspot/api-client`. For the complete implementation, see [`references/signature-validation.md`](references/signature-validation.md).
 
 ## `package.json` for UI Extensions
 
@@ -424,6 +384,7 @@ For detailed configuration and patterns, consult:
 - **`references/ui-extensions-sdk.md`** — SDK hooks, context fields, actions API
 - **`references/ui-components.md`** — All UI components with examples
 - **`references/features.md`** — App events, app objects (open beta), settings page, home page
+- **`references/signature-validation.md`** — Full signature validation implementation for webhooks and card/settings page fetch endpoints
 - **`references/marketplace-listing.md`** — Full App Marketplace listing requirements, brand rules, app card criteria, and review process
 
 ### Official Documentation
