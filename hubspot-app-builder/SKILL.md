@@ -1,6 +1,6 @@
 ---
 name: hubspot-app-builder
-description: This skill should be used when the user asks to "build a HubSpot app", "create a HubSpot app", "add a card to HubSpot", "create an app card", "build a UI extension", "set up HubSpot webhooks", "configure HubSpot app", "add a settings page to HubSpot app", "build a HubSpot home page", "fetch data in HubSpot extension", or mentions building on the HubSpot developer platform 2025.2. Provides comprehensive guidance for building full HubSpot apps with best practices, CLI commands, and file structure.
+description: This skill should be used when the user asks to "build a HubSpot app", "create a HubSpot app", "add a card to HubSpot", "create an app card", "build a UI extension", "set up HubSpot webhooks", "configure HubSpot app", "add a settings page to HubSpot app", "build a HubSpot home page", "fetch data in HubSpot extension", "list an app on the HubSpot marketplace", "submit a HubSpot app listing", "marketplace listing requirements", or mentions building on the HubSpot developer platform 2025.2. Provides comprehensive guidance for building full HubSpot apps with best practices, CLI commands, file structure, and App Marketplace listing requirements.
 version: 1.0.0
 ---
 
@@ -367,6 +367,31 @@ Install: `hs project install-deps`
 | `private` | `oauth` | Up to 10 allowlisted accounts |
 | `marketplace` | `oauth` | 25 before listing; unlimited after |
 
+## App Marketplace Listing
+
+Before submitting to the HubSpot App Marketplace, the app must meet these key requirements:
+
+**Technical minimums:**
+- OAuth is the **sole** authorization method — no API keys or private app tokens
+- At least **3 active installs** from unaffiliated accounts with OAuth-authenticated API activity in the past 30 days
+- Only request scopes the app actually uses; all requested scopes must appear in the *Shared data* table
+- Classic CRM cards are **not allowed** (deprecated June 16, 2025)
+
+**Listing content:**
+- Content must be integration-specific (not general product marketing)
+- All URLs must be live, publicly accessible, and under 250 characters — add *HubSpot Crawler* to your site allow list before submitting
+- Include: setup documentation, Install button URL, support resources, Terms of Service, Privacy Policy, and pricing (matching your website exactly)
+- Bi-directional sync must be declared in *Shared data* when both read and write scopes are requested for the same object
+
+**App cards (if using UI extensions):**
+- Do not use HubSpot brand names in card names or icons
+- One primary button per surface; destructive buttons must use destructive styling
+- Must not access or display sensitive data
+
+**Review process:** Initial review within 10 business days; full cycle up to 60 days. Only one app can be under review at a time.
+
+For the complete requirements checklist, see [`references/marketplace-listing.md`](references/marketplace-listing.md).
+
 ## Local Development
 
 ```shell
@@ -399,6 +424,7 @@ For detailed configuration and patterns, consult:
 - **`references/ui-extensions-sdk.md`** — SDK hooks, context fields, actions API
 - **`references/ui-components.md`** — All UI components with examples
 - **`references/features.md`** — App events, app objects (open beta), settings page, home page
+- **`references/marketplace-listing.md`** — Full App Marketplace listing requirements, brand rules, app card criteria, and review process
 
 ### Official Documentation
 
@@ -415,3 +441,6 @@ For detailed configuration and patterns, consult:
 - [App events (beta)](https://developers.hubspot.com/docs/apps/developer-platform/add-features/app-events/overview)
 - [App objects (beta)](https://developers.hubspot.com/docs/apps/developer-platform/add-features/app-objects/overview)
 - [Configure webhooks](https://developers.hubspot.com/docs/apps/developer-platform/add-features/configure-webhooks)
+- [App Marketplace listing requirements](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/listing-your-app/app-marketplace-listing-requirements)
+- [How to list your app](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/listing-your-app/listing-your-app)
+- [App certification requirements](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/apply-for-certification/certification-requirements)
