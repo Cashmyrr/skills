@@ -380,7 +380,8 @@ logger.error("Error message");
 ### Reference Files
 
 For detailed configuration and patterns, consult:
-- **`references/app-configuration.md`** — Complete `app-hsmeta.json` schema, scopes, auth types
+- **`references/app-configuration.md`** — Complete `app-hsmeta.json` schema, auth types
+- **`references/scopes.md`** — Full list of available OAuth scopes grouped by category (CRM, CMS, settings, marketing, etc.)
 - **`references/ui-extensions-sdk.md`** — SDK hooks, context fields, actions API
 - **`references/ui-components.md`** — All UI components with examples
 - **`references/features.md`** — App events, app objects (open beta), settings page, home page

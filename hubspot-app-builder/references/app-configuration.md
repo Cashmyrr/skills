@@ -99,20 +99,20 @@
 
 ## Scopes Reference
 
+For the full list of available scopes organized by category, see [`scopes.md`](scopes.md).
+
+Common scopes to get started:
+
 | Scope | Description |
 |---|---|
 | `crm.objects.contacts.read` | Read contacts |
-| `crm.objects.contacts.write` | Write contacts |
+| `crm.objects.contacts.write` | Create, delete, update contacts |
 | `crm.objects.companies.read` | Read companies |
 | `crm.objects.deals.read` | Read deals |
-| `crm.objects.deals.write` | Write deals |
-| `tickets` | Access tickets (required for helpdesk.sidebar cards) |
-| `crm.objects.custom.read` | Read custom objects |
+| `crm.objects.deals.write` | Create, delete, update deals |
+| `tickets` | Access tickets (required for `helpdesk.sidebar` cards) |
+| `crm.objects.custom.read` | Read custom objects (Enterprise) |
 | `crm.objects.orders.read` | Read orders |
-| `collector.graphql_schema.read` | GraphQL schema access |
-| `collector.graphql_query.execute` | Execute GraphQL queries |
-
-Full list: https://developers.hubspot.com/docs/apps/legacy-apps/authentication/scopes
 
 ## `permittedUrls`
 
