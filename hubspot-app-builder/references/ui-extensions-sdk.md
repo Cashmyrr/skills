@@ -239,7 +239,7 @@ Prefer `useCrmProperties` hook instead — it has automatic state management and
 
 - Always use TypeScript generics: `useExtensionApi<'crm.record.tab'>()`
 - Call hooks at component level, never inside event handlers
-- Use `hubspot.fetch()` instead of browser `fetch()` for external data
+- Use `hubspot.fetch()` instead of browser `fetch()` for external data. Unlike native `fetch`, `body` takes a plain object — do not `JSON.stringify()` it or add `Content-Type` headers; HubSpot handles serialization automatically
 - Validate `X-HubSpot-Signature-v3` on every backend endpoint called from a CRM card or settings page. When any UI extension (card, settings page, home page) calls `hubspot.fetch()`, HubSpot proxies the request to your server and signs it with `X-HubSpot-Signature-v3`. Validate using `Signature.isValid()` from `@hubspot/api-client` — the same as webhook validation. See [`signature-validation.md`](signature-validation.md) for the full implementation.
 - Never store secrets in React code — proxy secrets through your backend
 - Use `logger` for debugging deployed extensions, not `console.log`

@@ -204,30 +204,30 @@ const MyCard = () => {
 ```jsx
 import { hubspot } from "@hubspot/ui-extensions";
 
-// In component
+// GET
 const response = await hubspot.fetch("https://api.example.com/data", {
   method: "GET",
   timeout: 5000,
 });
 const data = await response.json();
+
+// POST — body is a plain object, not JSON.stringify()
+const response = await hubspot.fetch("https://api.example.com/data", {
+  method: "POST",
+  body: { key: "value" },
+});
 ```
 
-Requirements:
-- Add the URL to `permittedUrls.fetch` in `app-hsmeta.json`
-- URLs must use HTTPS (no localhost — use proxy for local dev)
-- Max 20 concurrent requests per account; 15s timeout; 1MB payload limit
-- No custom headers except `Authorization`; HubSpot signs requests automatically with `X-HubSpot-Signature-v3`
+Key differences from native `fetch`:
+- `body` is a plain object — do not `JSON.stringify()` or set `Content-Type` manually
+- Only `Authorization` is supported as a custom header
+- URLs must be listed in `permittedUrls.fetch`; `localhost` is not allowed (use a proxy)
+- HubSpot appends `userId`, `portalId`, `userEmail`, `appId` as query params on every request
+- Max 20 concurrent requests; 15s timeout; 1MB payload limit
 
-**Your backend must validate `X-HubSpot-Signature-v3` on every request coming from a CRM card or settings page fetch.** This is the same validation required for webhooks — use `Signature.isValid()` from `@hubspot/api-client`. Without it, anyone can send fake requests to your endpoint.
+Your backend must validate `X-HubSpot-Signature-v3` on every incoming request — see [`references/signature-validation.md`](references/signature-validation.md).
 
-For local dev proxy, create `local.json` in the project root:
-```json
-{
-  "proxy": {
-    "https://api.example.com": "http://localhost:8080"
-  }
-}
-```
+For the full guide (proxy setup, Authorization header pattern, local dev signing, monitoring), see [`references/fetching-data.md`](references/fetching-data.md).
 
 ## Available UI Components
 
@@ -383,6 +383,7 @@ For detailed configuration and patterns, consult:
 - **`references/app-configuration.md`** — Complete `app-hsmeta.json` schema, auth types
 - **`references/scopes.md`** — Full list of available OAuth scopes grouped by category (CRM, CMS, settings, marketing, etc.)
 - **`references/ui-extensions-sdk.md`** — SDK hooks, context fields, actions API
+- **`references/fetching-data.md`** — `hubspot.fetch()` full guide: differences from native fetch, limits, auto query params, Authorization header pattern, local dev proxy, signature validation
 - **`references/ui-components.md`** — All UI components with examples
 - **`references/features.md`** — App events, app objects (open beta), settings page, home page
 - **`references/signature-validation.md`** — Full signature validation implementation for webhooks and card/settings page fetch endpoints
