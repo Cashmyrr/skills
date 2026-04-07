@@ -12,17 +12,18 @@ Skills are "onboarding guides" for AI agents — they provide procedural knowled
 
 ### [`hubspot-app-builder`](./hubspot-app-builder/SKILL.md)
 
-Build full HubSpot apps on the latest developer platform (2025.2).
+Build full HubSpot apps on the latest developer platform (2026.03).
 
-Covers the entire development lifecycle: project creation via CLI, file structure, app configuration, UI extension cards, SDK hooks, external data fetching, UI components, webhooks, settings pages, app home pages, app events, app objects, and distribution.
+Covers the entire development lifecycle: project creation via CLI, file structure, app configuration, UI extension cards, SDK hooks, external data fetching, serverless functions, UI components, webhooks, settings pages, app home pages, app events, app objects, and distribution.
 
-**Triggers on:** "build a HubSpot app", "create an app card", "set up HubSpot webhooks", "build a UI extension", "configure HubSpot app", and more.
+**Triggers on:** "build a HubSpot app", "create an app card", "set up HubSpot webhooks", "build a UI extension", "configure HubSpot app", "add serverless functions to HubSpot app", and more.
 
 **Includes:**
 - `references/app-configuration.md` — full `app-hsmeta.json` schema, scopes, auth types
 - `references/ui-extensions-sdk.md` — SDK hooks, context, actions, overlays, logger
-- `references/ui-components.md` — all UI components with examples
-- `references/features.md` — home page, settings, app events, app objects, webhooks
+- `references/ui-components.md` — all UI components with examples (40+ standard, 9 CRM data, 3 CRM action)
+- `references/features.md` — home page, settings, app events, app objects, webhooks, serverless functions
+- `references/scopes.md` — complete OAuth scopes reference
 - `examples/` — working card component, card config, and app config templates
 
 ---
