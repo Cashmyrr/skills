@@ -1,6 +1,6 @@
 # HubSpot Scopes Reference
 
-> Official docs: https://developers.hubspot.com/docs/apps/legacy-apps/authentication/scopes
+> Official docs: https://developers.hubspot.com/docs/apps/developer-platform/build-apps/authentication/scopes
 
 Only request scopes your app actually uses. All requested scopes must appear in the *Shared data* table of your Marketplace listing. Use granular scopes (e.g. `crm.objects.contacts.read`) over broad ones when both are available.
 

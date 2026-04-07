@@ -1,6 +1,6 @@
 # UI Extensions SDK Reference
 
-> Official docs: https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensibility/ui-extensions-sdk
+> Official docs: https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensions/overview
 
 ## Registering the Extension
 

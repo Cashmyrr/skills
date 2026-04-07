@@ -1,19 +1,22 @@
 ---
 name: hubspot-app-builder
-description: This skill should be used when the user asks to "build a HubSpot app", "create a HubSpot app", "add a card to HubSpot", "create an app card", "build a UI extension", "set up HubSpot webhooks", "configure HubSpot app", "add a settings page to HubSpot app", "build a HubSpot home page", "fetch data in HubSpot extension", "list an app on the HubSpot marketplace", "submit a HubSpot app listing", "marketplace listing requirements", or mentions building on the HubSpot developer platform 2025.2. Provides comprehensive guidance for building full HubSpot apps with best practices, CLI commands, file structure, and App Marketplace listing requirements.
-version: 1.0.0
+description: This skill should be used when the user asks to "build a HubSpot app", "create a HubSpot app", "add a card to HubSpot", "create an app card", "build a UI extension", "set up HubSpot webhooks", "configure HubSpot app", "add a settings page to HubSpot app", "build a HubSpot home page", "fetch data in HubSpot extension", "list an app on the HubSpot marketplace", "submit a HubSpot app listing", "marketplace listing requirements", "add serverless functions to HubSpot app", or mentions building on the HubSpot developer platform 2026.03. Provides comprehensive guidance for building full HubSpot apps with best practices, CLI commands, file structure, serverless functions, and App Marketplace listing requirements.
+version: 1.1.0
 ---
 
-# HubSpot App Builder (Platform 2025.2)
+# HubSpot App Builder (Platform 2026.03)
 
-This skill guides the development of full HubSpot apps on the latest developer platform (version `2025.2`), covering project creation, configuration, UI extensions, webhooks, and distribution.
+This skill guides the development of full HubSpot apps on the latest developer platform (version `2026.03`), covering project creation, configuration, UI extensions, serverless functions, webhooks, and distribution.
+
+> **Platform version 2026.03** was released on March 30, 2026. It re-introduces full serverless function support for apps (including static-auth apps). Previous version 2025.2 is now in "Supported" status.
 
 ## Prerequisites
 
-- HubSpot CLI v7.6.0+: `npm install -g @hubspot/cli@latest`
+- HubSpot CLI v8.3.0+: `npm install -g @hubspot/cli@latest`
 - Authenticate: `hs account auth`
-- Node.js 18+
+- Node.js 20+ (minimum raised from 18 in 2025.1)
 - A HubSpot developer account
+- Enterprise subscription required for production serverless functions (developer test accounts work without)
 
 ## Project Setup Workflow
 
@@ -26,7 +29,7 @@ hs project create
 Follow CLI prompts to configure:
 - **Distribution**: `marketplace` (for App Marketplace listing) or `private` (for specific accounts)
 - **Auth**: `oauth` (multiple accounts) or `static` (single account)
-- **Features**: Select from `card`, `settings`, `app-function`, `webhooks`, `workflow-action`
+- **Features**: Select from `card`, `settings`, `app-function`, `serverless-function`, `webhooks`, `workflow-action`
 
 To add a feature later:
 ```shell
@@ -37,7 +40,7 @@ hs project add
 
 ```
 my-project-folder/
-├── hsproject.json
+├── hsproject.json                    # Must include "platformVersion": "2026.03"
 └── src/
     └── app/
         ├── app-hsmeta.json          # Top-level app config (required)
@@ -49,6 +52,9 @@ my-project-folder/
         │   ├── Settings.tsx
         │   ├── settings-hsmeta.json
         │   └── package.json
+        ├── serverless-functions/     # Serverless functions (new in 2026.03)
+        │   ├── my-function.js
+        │   └── serverless.json
         ├── app-events/               # App events (open beta)
         │   └── my-event-hsmeta.json
         ├── app-objects/              # App objects (open beta)
@@ -229,23 +235,89 @@ Your backend must validate `X-HubSpot-Signature-v3` on every incoming request �
 
 For the full guide (proxy setup, Authorization header pattern, local dev signing, monitoring), see [`references/fetching-data.md`](references/fetching-data.md).
 
+## Serverless Functions (New in 2026.03)
+
+Platform version 2026.03 re-introduces full serverless function support for apps, including apps using static auth. Serverless functions execute server-side JavaScript within HubSpot's infrastructure, eliminating the need for external servers.
+
+### Types of Serverless Functions
+
+- **Private functions** — internal functions called by UI extensions (not available in CMS serverless)
+- **Public endpoints** — HTTP-accessible endpoints (Content Hub Enterprise only)
+
+### Configuration (`serverless.json`)
+
+```json
+{
+  "appFunctions": {
+    "myFunction": {
+      "file": "my-function.js",
+      "endpoint": {
+        "path": "my-endpoint",
+        "method": ["GET", "POST"]
+      }
+    }
+  }
+}
+```
+
+### Serverless Function Pattern
+
+```js
+// my-function.js
+const hubspot = require("@hubspot/api-client");
+
+exports.main = async (context = {}) => {
+  const hubspotClient = new hubspot.Client({
+    accessToken: process.env.PRIVATE_APP_ACCESS_TOKEN,
+  });
+
+  try {
+    const res = await hubspotClient.crm.contacts.basicApi.getPage();
+    return res;
+  } catch (err) {
+    console.error(err);
+    return err;
+  }
+};
+```
+
+### Key Notes
+- Uses `process.env` for access tokens (not `context.secrets`)
+- Async/await required (callbacks no longer supported)
+- Log size up to 256KB, guaranteed execution order
+- Secrets managed via `hs secret add` CLI command
+- NPM packages supported
+- Enterprise subscription required for production (test accounts work without)
+
+### Migrating Serverless Functions to 2026.03
+
+If migrating from an older version:
+1. Update `platformVersion` to `"2026.03"` in `hsproject.json`
+2. Environment variables from old `serverless.json` must be re-added as secrets using `hs secret add`
+3. Apps must be on at least version 2025.2 before migrating serverless functions
+4. Run `hs project upload` to redeploy
+
+> **Warning:** Migrating legacy private or public apps to 2026.03 is irreversible — you cannot downgrade back.
+
 ## Available UI Components
 
 Import from `@hubspot/ui-extensions`:
-- **Layout**: `Flex`, `Box`, `Divider`, `Grid`
-- **Text/Display**: `Text`, `Heading`, `Image`, `Link`
-- **Input**: `Input`, `TextArea`, `Select`, `MultiSelect`, `Checkbox`, `RadioButton`, `DateInput`, `NumberInput`
-- **Actions**: `Button`, `LoadingButton`, `IconButton`
-- **Feedback**: `Alert`, `LoadingSpinner`, `Tag`, `Badge`
-- **Overlay**: `Modal`, `ModalBody`, `ModalFooter`, `Panel`, `PanelBody`, `PanelFooter`
-- **Data**: `Table`, `TableHead`, `TableBody`, `TableRow`, `TableCell`
+- **Layout**: `Flex`, `Box`, `Divider`, `Grid`, `AutoGrid`, `Spacer`, `Inline`
+- **Text/Display**: `Text`, `Heading`, `Image`, `Link`, `Icon`, `Illustration`
+- **Input**: `Input`, `TextArea`, `Select`, `MultiSelect`, `Checkbox`, `RadioButton`, `DateInput`, `NumberInput`, `CurrencyInput`, `SearchInput`, `StepperInput`, `Toggle`, `ToggleGroup`
+- **Actions**: `Button`, `LoadingButton`, `IconButton`, `ButtonRow`
+- **Feedback**: `Alert`, `LoadingSpinner`, `Tag`, `StatusTag`, `Badge`, `Tooltip`, `ProgressBar`, `EmptyState`, `ErrorState`
+- **Overlay**: `Modal`, `ModalBody`, `ModalFooter`, `Panel`, `PanelBody`, `PanelFooter`, `Dropdown`
+- **Data**: `Table`, `TableHead`, `TableBody`, `TableRow`, `TableCell`, `DescriptionList`, `Statistics`, `ScoreCircle`
+- **Navigation**: `Tabs`, `StepIndicator`, `Accordion`
+- **Charts**: `BarChart`, `LineChart`
+- **Container**: `Tile`
 - **Form**: `Form`, `FormField`
+- **List**: `List`
 
-Import from `@hubspot/ui-extensions/crm` (CRM points only, not sidebar):
-- `CrmPropertyList` — display/edit CRM properties
-- `CrmAssociationTable` — show associated records
-- `CrmAssociationPivotTable`
-- `ReportChart`
+Import from `@hubspot/ui-extensions/crm`:
+- **CRM Data**: `CrmPropertyList`, `CrmAssociationTable`, `CrmAssociationPivot`, `CrmAssociationPropertyList`, `CrmAssociationStageTracker`, `CrmDataHighlight`, `CrmReport`, `CrmStageTracker`, `CrmStatistics`
+- **CRM Actions**: `CrmActionButton`, `CrmActionLink`, `CrmCardActions`
 
 ## Webhooks Configuration
 
@@ -407,3 +479,6 @@ For detailed configuration and patterns, consult:
 - [App Marketplace listing requirements](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/listing-your-app/app-marketplace-listing-requirements)
 - [How to list your app](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/listing-your-app/listing-your-app)
 - [App certification requirements](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/apply-for-certification/certification-requirements)
+- [Serverless functions overview](https://developers.hubspot.com/docs/apps/developer-platform/add-features/serverless-functions/overview)
+- [Migrate to 2026.03](https://developers.hubspot.com/docs/apps/developer-platform/build-apps/migrate-an-app/migrate-to-the-latest-platform-version)
+- [Platform versioning](https://developers.hubspot.com/docs/developer-tooling/platform/versioning)

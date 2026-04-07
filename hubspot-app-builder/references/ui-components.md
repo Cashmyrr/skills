@@ -1,6 +1,6 @@
 # UI Components Reference
 
-> Official docs: https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensibility/ui-components/overview
+> Official docs: https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensions/ui-components/overview
 
 ## Import Sources
 
@@ -25,6 +25,9 @@ import { AddNoteAction, SendEmailAction } from "@hubspot/ui-extensions/crm";
 | `Box` | `padding`, `margin` | Generic container with spacing |
 | `Divider` | — | Horizontal rule separator |
 | `Grid` | `columns`, `gap` | CSS Grid container |
+| `AutoGrid` | `gap` | Auto-responsive grid layout |
+| `Spacer` | `size` | Vertical/horizontal spacing element |
+| `Inline` | `gap`, `align` | Inline horizontal layout |
 
 ```jsx
 <Flex direction="column" gap="medium" align="start">
@@ -41,6 +44,8 @@ import { AddNoteAction, SendEmailAction } from "@hubspot/ui-extensions/crm";
 | `Heading` | `level` | H1-H6 headings |
 | `Image` | `src`, `alt`, `width`, `height` | Image with optional overlay |
 | `Link` | `href`, `onClick` | Hyperlink |
+| `Icon` | `name`, `size` | Built-in icon component |
+| `Illustration` | `name`, `size` | Decorative illustration |
 | `Tag` | `variant`, `onClick`, `overlay` | Chip/badge with optional overlay trigger |
 | `Badge` | `variant` | Status badge |
 
@@ -62,6 +67,11 @@ import { AddNoteAction, SendEmailAction } from "@hubspot/ui-extensions/crm";
 | `RadioButton` | `checked`, `onChange`, `label` | Radio button |
 | `DateInput` | `value`, `onChange`, `label`, `format` | Date picker |
 | `NumberInput` | `value`, `onChange`, `label`, `min`, `max` | Number input |
+| `CurrencyInput` | `value`, `onChange`, `label`, `currency` | Currency-formatted number input |
+| `SearchInput` | `value`, `onChange`, `placeholder` | Search input with icon |
+| `StepperInput` | `value`, `onChange`, `min`, `max`, `step` | Increment/decrement number input |
+| `Toggle` | `checked`, `onChange`, `label` | On/off toggle switch |
+| `ToggleGroup` | `value`, `onChange`, `options` | Group of toggle options |
 
 ```jsx
 <Select
@@ -82,6 +92,7 @@ import { AddNoteAction, SendEmailAction } from "@hubspot/ui-extensions/crm";
 | `Button` | `onClick`, `variant`, `disabled`, `overlay`, `type` | Primary action button |
 | `LoadingButton` | `onClick`, `isLoading`, `variant` | Button with loading state |
 | `IconButton` | `onClick`, `icon`, `tooltip` | Icon-only button |
+| `ButtonRow` | `children` | Horizontal row of buttons |
 
 **Button variants:** `primary`, `secondary`, `destructive`, `transparent`
 
@@ -101,8 +112,12 @@ import { AddNoteAction, SendEmailAction } from "@hubspot/ui-extensions/crm";
 | `Alert` | `type`, `title`, `children` | Inline alert within card |
 | `LoadingSpinner` | `label` | Spinning loader |
 | `Tag` | `variant` | Colored label tag |
+| `StatusTag` | `variant`, `label` | Status-specific tag with semantic colors |
 | `Badge` | `variant`, `text` | Status badge |
 | `Tooltip` | `text` | Hover tooltip wrapper |
+| `ProgressBar` | `value`, `max`, `variant` | Visual progress indicator |
+| `EmptyState` | `title`, `description`, `illustration` | Placeholder for empty content |
+| `ErrorState` | `title`, `description` | Error display component |
 
 ```jsx
 <Alert type="warning" title="Warning">
@@ -121,6 +136,11 @@ import { AddNoteAction, SendEmailAction } from "@hubspot/ui-extensions/crm";
 | `TableBody` | — | Body section |
 | `TableRow` | — | Table row |
 | `TableCell` | `width`, `align` | Table cell |
+| `DescriptionList` | `items` | Key-value pair display list |
+| `Statistics` | `items` | Statistical metrics display |
+| `ScoreCircle` | `value`, `max`, `label` | Circular score/progress indicator |
+| `BarChart` | `data`, `xKey`, `yKey` | Bar chart visualization |
+| `LineChart` | `data`, `xKey`, `yKey` | Line chart visualization |
 
 ```jsx
 <Table>
@@ -155,6 +175,17 @@ import { AddNoteAction, SendEmailAction } from "@hubspot/ui-extensions/crm";
 </Form>
 ```
 
+### Navigation & Container
+
+| Component | Key Props | Description |
+|---|---|---|
+| `Tabs` | `activeTab`, `onTabChange`, `children` | Tabbed navigation |
+| `StepIndicator` | `currentStep`, `steps` | Multi-step process indicator |
+| `Accordion` | `title`, `children` | Collapsible content section |
+| `Tile` | `children`, `onClick` | Clickable card-like container |
+| `Dropdown` | `trigger`, `children` | Dropdown menu overlay |
+| `List` | `items` | Ordered/unordered list display |
+
 ## CRM Data Components
 
 > Only available in `crm.record.tab`, `crm.record.sidebar`, `crm.preview`, `helpdesk.sidebar`.
@@ -186,9 +217,33 @@ Shows associated records in a paginated table:
 />
 ```
 
-### `ReportChart`
+### `CrmReport`
 
 Renders a CRM report as a chart within the extension.
+
+### `CrmAssociationPivot`
+
+Pivot-style view of associated records.
+
+### `CrmAssociationPropertyList`
+
+Display properties from associated records.
+
+### `CrmAssociationStageTracker`
+
+Track pipeline stages of associated records.
+
+### `CrmDataHighlight`
+
+Highlight key data points from CRM records.
+
+### `CrmStageTracker`
+
+Visual pipeline stage tracker for the current record.
+
+### `CrmStatistics`
+
+Display aggregated statistics from CRM data.
 
 ## CRM Action Components
 
@@ -196,23 +251,21 @@ Trigger built-in CRM actions from within the extension:
 
 ```js
 import {
-  AddNoteAction,
-  SendEmailAction,
-  ScheduleMeetingAction,
-  CreateTaskAction,
-  LogCallAction
+  CrmActionButton,
+  CrmActionLink,
+  CrmCardActions
 } from "@hubspot/ui-extensions/crm";
 ```
 
 ```jsx
-<AddNoteAction objectTypeId="0-1" objectId={crm.objectId}>
-  <Button>Add Note</Button>
-</AddNoteAction>
+<CrmActionButton actionType="ADD_NOTE" objectTypeId="0-1" objectId={crm.objectId}>
+  Add Note
+</CrmActionButton>
 ```
 
 ## Figma Design Kit
 
-For UI prototyping: https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensibility/ui-components/figma-design-kit
+For UI prototyping: https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensions/ui-components/figma-design-kit
 
 ## Common Patterns
 
