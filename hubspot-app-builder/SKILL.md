@@ -1,20 +1,20 @@
 ---
 name: hubspot-app-builder
 description: This skill should be used when the user asks to "build a HubSpot app", "create a HubSpot app", "add a card to HubSpot", "create an app card", "build a UI extension", "set up HubSpot webhooks", "configure HubSpot app", "add a settings page to HubSpot app", "build a HubSpot home page", "fetch data in HubSpot extension", "list an app on the HubSpot marketplace", "submit a HubSpot app listing", "marketplace listing requirements", "add serverless functions to HubSpot app", or mentions building on the HubSpot developer platform 2026.03. Provides comprehensive guidance for building full HubSpot apps with best practices, CLI commands, file structure, serverless functions, and App Marketplace listing requirements.
-version: 1.1.0
+version: 1.2.1
 ---
 
 # HubSpot App Builder (Platform 2026.03)
 
-This skill guides the development of full HubSpot apps on the latest developer platform (version `2026.03`), covering project creation, configuration, UI extensions, serverless functions, webhooks, and distribution.
+This skill guides the development of full HubSpot apps on the latest developer platform (version `2026.03`), covering project creation, configuration, UI extensions, serverless functions, agent tools, webhooks, and distribution.
 
-> **Platform version 2026.03** was released on March 30, 2026. It re-introduces full serverless function support for apps (including static-auth apps). Previous version 2025.2 is now in "Supported" status.
+> **Platform version 2026.03** was released on March 30, 2026 (GA confirmed in Spring 2026 Spotlight, April 14, 2026). It re-introduces full serverless function support for apps (including static-auth apps), introduces agent tools for Breeze Agents, expands App Homes into multi-page App Pages, and adds code sharing via npm workspaces. Previous version 2025.2 is now in "Supported" status.
 
 ## Prerequisites
 
 - HubSpot CLI v8.3.0+: `npm install -g @hubspot/cli@latest`
 - Authenticate: `hs account auth`
-- Node.js 20+ (minimum raised from 18 in 2025.1)
+- Node.js 22+ (minimum raised to v22 in 2025.2 and carried into 2026.03; was v20 in 2025.1)
 - A HubSpot developer account
 - Enterprise subscription required for production serverless functions (developer test accounts work without)
 
@@ -29,7 +29,7 @@ hs project create
 Follow CLI prompts to configure:
 - **Distribution**: `marketplace` (for App Marketplace listing) or `private` (for specific accounts)
 - **Auth**: `oauth` (multiple accounts) or `static` (single account)
-- **Features**: Select from `card`, `settings`, `app-function`, `serverless-function`, `webhooks`, `workflow-action`
+- **Features**: Select from `card`, `settings`, `pages`, `app-function`, `serverless-function`, `webhooks`, `workflow-action`
 
 To add a feature later:
 ```shell
@@ -41,6 +41,10 @@ hs project add
 ```
 my-project-folder/
 ├── hsproject.json                    # Must include "platformVersion": "2026.03"
+├── packages/                         # Shared code (npm workspaces, optional)
+│   └── shared-utils/
+│       ├── index.ts
+│       └── package.json
 └── src/
     └── app/
         ├── app-hsmeta.json          # Top-level app config (required)
@@ -48,20 +52,27 @@ my-project-folder/
         │   ├── MyCard.jsx
         │   ├── my-card-hsmeta.json
         │   └── package.json
+        ├── pages/                    # App Pages (multi-page, formerly App Homes)
+        │   ├── HomePage.jsx
+        │   ├── home-page-hsmeta.json
+        │   ├── DetailPage.jsx
+        │   ├── detail-page-hsmeta.json
+        │   └── package.json
         ├── settings/                 # App settings page
         │   ├── Settings.tsx
         │   ├── settings-hsmeta.json
         │   └── package.json
-        ├── serverless-functions/     # Serverless functions (new in 2026.03)
-        │   ├── my-function.js
-        │   └── serverless.json
+        ├── functions/                # Serverless functions (2026.03 format)
+        │   ├── myFunction.js
+        │   ├── myFunction-hsmeta.json   # Individual config per function
+        │   └── package.json
         ├── app-events/               # App events (open beta)
         │   └── my-event-hsmeta.json
         ├── app-objects/              # App objects (open beta)
         │   └── my-object-hsmeta.json
         ├── webhooks/                 # Webhook subscriptions
         │   └── webhooks-hsmeta.json
-        └── workflow-actions/         # Custom workflow actions
+        └── workflow-actions/         # Custom workflow actions / Agent tools
             └── custom-action-hsmeta.json
 ```
 
@@ -145,7 +156,7 @@ All UI extensions share the same structure: a `*-hsmeta.json` config + a React c
 | CRM right sidebar | `crm.record.sidebar` | No CRM data components here |
 | CRM preview panel | `crm.preview` | Record previews across CRM |
 | Help desk sidebar | `helpdesk.sidebar` | Requires `tickets` scope |
-| App home page | `home` | Full-screen extension |
+| App Pages (formerly App Home) | `home` | Multi-page full-screen experience; use `PageRoutes` and `PageLink` for navigation |
 | App settings page | `settings` | Config UI in HubSpot settings |
 
 **Supported objectTypes:** `contacts`, `companies`, `deals`, `tickets`, `orders`, `carts`, `p_customObjectName`, `app_object_uid`
@@ -235,26 +246,55 @@ Your backend must validate `X-HubSpot-Signature-v3` on every incoming request �
 
 For the full guide (proxy setup, Authorization header pattern, local dev signing, monitoring), see [`references/fetching-data.md`](references/fetching-data.md).
 
-## Serverless Functions (New in 2026.03)
+## Serverless Functions (2026.03 Format)
 
 Platform version 2026.03 re-introduces full serverless function support for apps, including apps using static auth. Serverless functions execute server-side JavaScript within HubSpot's infrastructure, eliminating the need for external servers.
 
+> **Important:** 2026.03 uses a **new per-function `-hsmeta.json` config** instead of the single `serverless.json` used in 2025.1. Each function has its own config file in `src/app/functions/`.
+
 ### Types of Serverless Functions
 
-- **Private functions** — internal functions called by UI extensions (not available in CMS serverless)
-- **Public endpoints** — HTTP-accessible endpoints (Content Hub Enterprise only)
+- **Private (App) functions** — internal functions called by UI extensions from App Cards, App Pages, and App Settings. Requires Enterprise subscription or a free developer test account.
+- **Public endpoint functions** — HTTP-accessible endpoints. Requires Content Hub Enterprise. **Not available in developer test accounts.**
 
-### Configuration (`serverless.json`)
+### Directory Structure (2026.03)
+
+```
+src/app/functions/
+├── myFunction.js
+├── myFunction-hsmeta.json    # Individual config per function
+└── package.json
+```
+
+This replaces the 2025.1 structure that used nested `.functions` folders with a single `serverless.json`.
+
+### Configuration (`myFunction-hsmeta.json`)
+
+**Private app function (no public endpoint):**
 
 ```json
 {
-  "appFunctions": {
-    "myFunction": {
-      "file": "my-function.js",
-      "endpoint": {
-        "path": "my-endpoint",
-        "method": ["GET", "POST"]
-      }
+  "uid": "myFunction",
+  "type": "app-function",
+  "config": {
+    "entrypoint": "/app/functions/myFunction.js",
+    "secretKeys": ["my_api_key"]
+  }
+}
+```
+
+**App function with public endpoint:**
+
+```json
+{
+  "uid": "myPublicFunction",
+  "type": "app-function",
+  "config": {
+    "entrypoint": "/app/functions/myPublicFunction.js",
+    "secretKeys": ["my_api_key"],
+    "endpoint": {
+      "path": "my-endpoint",
+      "method": ["GET", "POST"]
     }
   }
 }
@@ -263,7 +303,7 @@ Platform version 2026.03 re-introduces full serverless function support for apps
 ### Serverless Function Pattern
 
 ```js
-// my-function.js
+// myFunction.js
 const hubspot = require("@hubspot/api-client");
 
 exports.main = async (context = {}) => {
@@ -288,16 +328,98 @@ exports.main = async (context = {}) => {
 - Secrets managed via `hs secret add` CLI command
 - NPM packages supported
 - Enterprise subscription required for production (test accounts work without)
+- Functions can now run in **Developer Test Accounts** for safer iteration before production
 
 ### Migrating Serverless Functions to 2026.03
 
-If migrating from an older version:
-1. Update `platformVersion` to `"2026.03"` in `hsproject.json`
-2. Environment variables from old `serverless.json` must be re-added as secrets using `hs secret add`
-3. Apps must be on at least version 2025.2 before migrating serverless functions
-4. Run `hs project upload` to redeploy
+Migration path depends on your current version:
+
+**From 2025.2:**
+1. Update `platformVersion` from `"2025.2"` to `"2026.03"` in `hsproject.json`
+2. Run `hs project upload`
+
+**From 2025.1, 2023.2, or 2023.1:**
+1. Run `hs project migrate` in your project directory and follow the prompts
+
+**From legacy public apps (non-project-based):**
+1. Run `hs app migrate` and follow the prompts
+
+**Key migration notes:**
+- Environment variables from old `serverless.json` must be re-added as secrets using `hs secret add`
+- The old `serverless.json` single-config is replaced by individual `-hsmeta.json` files per function in `src/app/functions/`
 
 > **Warning:** Migrating legacy private or public apps to 2026.03 is irreversible — you cannot downgrade back.
+
+## Agent Tools (New in 2026.03)
+
+Agent tools are enhanced custom workflow actions that HubSpot AI agents (Breeze Agents) can call to perform tasks on behalf of users. They are built using the Developer Projects framework.
+
+### How Agent Tools Work
+
+- Built as enhanced `workflowAction` type in your project
+- Submitted for review before distribution
+- Once approved, made available to customers via your app listing and Breeze Agents
+- Marketplace-listed apps cannot deploy unapproved agent tools — deploys will fail until the tool passes review
+
+### Listing Requirements
+
+Apps that ship agent tools must comply with [agent tool listing requirements](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/agent-tool-listing-requirements).
+
+> For more details, see the [Agent Tools overview](https://developers.hubspot.com/docs/apps/developer-platform/add-features/agent-tools/overview).
+
+## Code Sharing with npm Workspaces (New in 2026.03)
+
+You can now share code across multiple UI extensions (app cards, settings pages, app pages) within a single project using npm workspaces.
+
+### Setup
+
+Create shared packages alongside your extensions:
+
+```
+my-project-folder/
+├── packages/
+│   └── shared-utils/
+│       ├── index.ts
+│       └── package.json
+└── src/
+    └── app/
+        ├── cards/
+        │   └── package.json     # declares shared-utils as dependency
+        └── pages/
+            └── package.json     # declares shared-utils as dependency
+```
+
+Each extension's `package.json` references the shared package:
+```json
+{
+  "dependencies": {
+    "shared-utils": "*"
+  }
+}
+```
+
+### Installation
+
+Shared packages are installed automatically when you run `hs project dev` or `hs project upload`, or manually with:
+```shell
+hs project install-deps
+```
+
+> For details, see [Code sharing with npm workspaces](https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensions/tools/code-sharing-with-npm-workspaces).
+
+## Developer MCP Server (GA)
+
+The local HubSpot Developer MCP server is now generally available, enabling app and CMS development through AI-powered code editors (Claude Code, Cursor, VS Code, etc.).
+
+### Setup
+
+```shell
+hs mcp setup
+```
+
+Requires HubSpot CLI v8.2.0+. Available tools include: `create-project`, `add-feature-to-project`, `upload-project`, `deploy-project`, `validate-project`, `search-docs`, `fetch-doc`, `get-build-status`, `get-build-logs`, and more.
+
+> For the full tool list and setup, see [Developer MCP Server docs](https://developers.hubspot.com/docs/developer-tooling/local-development/mcp-server).
 
 ## Available UI Components
 
@@ -407,7 +529,10 @@ Before submitting to the HubSpot App Marketplace, the app must meet these key re
 - OAuth is the **sole** authorization method — no API keys or private app tokens
 - At least **3 active installs** from unaffiliated accounts with OAuth-authenticated API activity in the past 30 days
 - Only request scopes the app actually uses; all requested scopes must appear in the *Shared data* table
-- Classic CRM cards are **not allowed** (deprecated June 16, 2025)
+- Must run on a **supported platform version** (2025.2+ today, 2026.03 recommended)
+- Must use a **supported date-based API version** for certified apps
+- Classic CRM cards are **not allowed** for new listings/certifications (must migrate to App Cards by **October 31, 2026**)
+- Agent tools are a **reviewable surface** — deploys fail until tools pass review for compliance with [agent tool listing requirements](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/agent-tool-listing-requirements)
 
 **Listing content:**
 - Content must be integration-specific (not general product marketing)
@@ -471,7 +596,7 @@ For detailed configuration and patterns, consult:
 - [UI extensions SDK](https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensibility/ui-extensions-sdk)
 - [Fetching data](https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensibility/fetching-data)
 - [UI components overview](https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensibility/ui-components/overview)
-- [App home page](https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensibility/create-an-app-home-page)
+- [App Pages (formerly App Homes)](https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensions/overview#app-home-pages)
 - [Settings page](https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensibility/create-a-settings-component)
 - [App events (beta)](https://developers.hubspot.com/docs/apps/developer-platform/add-features/app-events/overview)
 - [App objects (beta)](https://developers.hubspot.com/docs/apps/developer-platform/add-features/app-objects/overview)
@@ -480,5 +605,10 @@ For detailed configuration and patterns, consult:
 - [How to list your app](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/listing-your-app/listing-your-app)
 - [App certification requirements](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/apply-for-certification/certification-requirements)
 - [Serverless functions overview](https://developers.hubspot.com/docs/apps/developer-platform/add-features/serverless-functions/overview)
-- [Migrate to 2026.03](https://developers.hubspot.com/docs/apps/developer-platform/build-apps/migrate-an-app/migrate-to-the-latest-platform-version)
+- [Agent tools overview](https://developers.hubspot.com/docs/apps/developer-platform/add-features/agent-tools/overview)
+- [Agent tool listing requirements](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/agent-tool-listing-requirements)
+- [Code sharing with npm workspaces](https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensions/tools/code-sharing-with-npm-workspaces)
+- [Developer MCP Server setup](https://developers.hubspot.com/docs/developer-tooling/local-development/mcp-server)
+- [MCP Auth Apps (integrate with remote MCP Server)](https://developers.hubspot.com/docs/apps/developer-platform/build-apps/integrate-with-the-remote-hubspot-mcp-server)
+- [Migrate to 2026.03](https://developers.hubspot.com/docs/apps/developer-platform/build-apps/migrate-an-app/overview)
 - [Platform versioning](https://developers.hubspot.com/docs/developer-tooling/platform/versioning)

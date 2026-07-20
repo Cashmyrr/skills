@@ -1,5 +1,5 @@
 /**
- * Complete App Card Example — HubSpot Platform 2025.2
+ * Complete App Card Example — HubSpot Platform 2026.03
  *
  * File: src/app/cards/ContactEnrichment.jsx
  * Config: src/app/cards/contact-enrichment-hsmeta.json

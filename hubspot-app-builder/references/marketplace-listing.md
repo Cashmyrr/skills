@@ -16,8 +16,11 @@ Listings are manually reviewed by the HubSpot Ecosystem Quality team and rejecte
 | **Single App ID** | All API requests must use the public app ID + OAuth client ID associated with the listing |
 | **Active installs** | At least **3 active, unique installs** from accounts unaffiliated with your organization, showing OAuth-authenticated API activity in the past 30 days |
 | **Scopes** | Only request scopes your app actually uses |
-| **No classic CRM cards** | Classic CRM cards (deprecated June 16, 2025) are not allowed |
-| **AI connectors** | Apps primarily connecting HubSpot to external AI tools must use user-level permissions and HubSpot's MCP Server |
+| **Supported platform version** | Must run on a supported Developer Platform version (2025.2+ today, **2026.03 recommended**); certified apps must use a supported date-based API version |
+| **No classic CRM cards** | Legacy CRM cards no longer permitted for new listings, certifications, or recertifications. All apps must [migrate to App Cards](https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensibility/app-cards/create-an-app-card) by **October 31, 2026** or risk delisting/revocation |
+| **Agent tools review** | Agent tools are a reviewable surface — deploys fail until tools pass review for [agent tool listing requirements](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/agent-tool-listing-requirements) |
+| **App Card Review Program** | CRM UI extension app cards require review via [intake form](https://96it.share.hsforms.com/2a_JwN0iMSDuqoDikVh255Q) (App ID, Build ID, video walkthrough). Reviewed against security/privacy, performance/reliability, usability/accessibility, and value/functionality criteria |
+| **AI connectors** | Apps primarily connecting HubSpot to external AI tools must use user-level permissions and HubSpot's MCP Server; can build [MCP Auth Apps](https://developers.hubspot.com/docs/apps/developer-platform/build-apps/integrate-with-the-remote-hubspot-mcp-server) for secure OAuth 2.1 credential management |
 | **Tech Partner Agreement** | Must review and agree to [HubSpot's Technology Partner Program Agreement](https://legal.hubspot.com/technology-program-agreement) |
 | **Restricted industries** | App must not exclusively serve [restricted industries](https://legal.hubspot.com/acceptable-use#Restricted-Industries) |
 

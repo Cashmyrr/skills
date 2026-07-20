@@ -1,12 +1,27 @@
 # HubSpot App Features Reference
 
-## App Home Page
+## App Pages (formerly App Homes) — Updated 2026.03
 
-> Official docs: https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensibility/create-an-app-home-page
+> Official docs: https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensions/overview#app-home-pages
 
-A full-screen extension accessible from the app navigation. Ideal for dashboards, analytics, and multi-step workflows.
+App Pages allow you to build custom, full-page, **multi-page** experiences for your app directly within HubSpot using React. Starting with a dedicated app home as the landing page, you can add additional pages with built-in navigation using `PageRoutes` and `PageLink` components. App Pages share the same toolkit as app cards and settings pages, including dedicated header actions via `PageHeader`.
 
-### Configuration (`settings/home-hsmeta.json` or similar)
+Users access app pages by clicking the Marketplace icon and selecting the app from "Recently visited apps" or via a direct app URL.
+
+### File Structure
+
+```
+src/app/pages/
+├── HomePage.jsx
+├── home-page-hsmeta.json
+├── DetailPage.jsx
+├── detail-page-hsmeta.json
+└── package.json
+```
+
+### Configuration
+
+**Home page (landing):**
 
 ```json
 {
@@ -14,42 +29,48 @@ A full-screen extension accessible from the app navigation. Ideal for dashboards
   "type": "home",
   "config": {
     "name": "My App Home",
-    "entrypoint": "/app/home/HomePage.jsx"
+    "entrypoint": "/app/pages/HomePage.jsx"
   }
 }
 ```
 
-Or can be configured as a card with `"location": "home"`:
+**Additional page:**
 
 ```json
 {
-  "uid": "my-home-card",
-  "type": "card",
+  "uid": "my-detail-page",
+  "type": "page",
   "config": {
-    "name": "Dashboard",
-    "location": "home",
-    "entrypoint": "/app/cards/HomePage.jsx"
+    "name": "Details",
+    "entrypoint": "/app/pages/DetailPage.jsx"
   }
 }
 ```
 
-### Home Page React Component
+### Multi-Page Navigation
 
 ```jsx
 import React from "react";
-import { hubspot, Heading, Text, Flex } from "@hubspot/ui-extensions";
+import { hubspot, Heading, Text, Flex, PageHeader } from "@hubspot/ui-extensions";
+import { PageLink } from "@hubspot/ui-extensions";
 
 hubspot.extend<'home'>(() => <HomePage />);
 
 const HomePage = () => {
   return (
     <Flex direction="column" gap="large">
-      <Heading level={1}>My App Dashboard</Heading>
-      <Text>Welcome to your app home page.</Text>
+      <PageHeader title="My App Dashboard" />
+      <Heading level={1}>Dashboard</Heading>
+      <Text>Welcome to your app.</Text>
+      <PageLink to="my-detail-page">View Details</PageLink>
     </Flex>
   );
 };
 ```
+
+### Getting Started
+
+Run `hs project add` in the CLI and select "Pages" to generate the necessary React and configuration files.
 
 ---
 
@@ -226,9 +247,19 @@ In your card's `objectTypes`, reference app objects by their uid:
 
 ---
 
-## Custom Workflow Actions
+## Custom Workflow Actions & Agent Tools
 
 > Official docs: https://developers.hubspot.com/docs/apps/developer-platform/add-features/custom-workflow-actions
+> Agent tools docs: https://developers.hubspot.com/docs/apps/developer-platform/add-features/agent-tools/overview
+
+### Agent Tools (New in 2026.03)
+
+Agent tools are **enhanced custom workflow actions** that HubSpot AI agents (Breeze Agents) can call to perform tasks on behalf of users. They are built using the Developer Projects framework as `workflowAction` types, submitted for review, and then made available via your app listing.
+
+**Key requirements for Marketplace apps:**
+- Agent tools are treated as a reviewable surface
+- Deploys will fail until the tool passes review for compliance with [agent tool listing requirements](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/agent-tool-listing-requirements)
+- Unapproved tools cannot be deployed by Marketplace-listed apps
 
 ### File Structure
 
