@@ -1,22 +1,25 @@
 /**
- * Complete App Card Example — HubSpot Platform 2026.09
- * Note: app cards are account-level only; they are not supported in user-level apps.
+ * Complete App Card Example — HubSpot Platform 2026.09, @hubspot/ui-extensions 1.0.1
+ * Note: app cards are not supported in user-level apps (see "User-Level Access" in SKILL.md).
  *
  * File: src/app/cards/ContactEnrichment.jsx
  * Config: src/app/cards/contact-enrichment-hsmeta.json
  *
  * This example shows:
- * - Fetching CRM properties with useCrmProperties hook
+ * - Reading the current record with useRecordPropertiesCurrent (v1 hook)
  * - Fetching external data with hubspot.fetch()
  * - Alert actions
  * - Modal overlay
  * - Loading, error and empty states (required on every data view)
- * - TypeScript generics (works as .tsx too)
+ *
+ * TypeScript: rename to .tsx and add the location generics:
+ *   hubspot.extend<"crm.record.tab">(...) and useExtensionApi<"crm.record.tab">()
  */
 
 import React, { useState } from "react";
 import {
   hubspot,
+  Stack,
   Flex,
   Text,
   Button,
@@ -31,9 +34,9 @@ import {
   Divider,
   useExtensionApi,
 } from "@hubspot/ui-extensions";
-import { useCrmProperties } from "@hubspot/ui-extensions/crm";
+import { useRecordPropertiesCurrent } from "@hubspot/ui-extensions/crm";
 
-// Register the extension for the crm.record.tab location
+// Register the extension (the card's location comes from its -hsmeta.json)
 hubspot.extend(() => <ContactEnrichment />);
 
 const ContactEnrichment = () => {
@@ -43,12 +46,9 @@ const ContactEnrichment = () => {
     isLoading: propsLoading,
     error: propsError,
     refetch,
-  } = useCrmProperties([
-    "firstname",
-    "lastname",
-    "email",
-    "company",
-  ]);
+  } = useRecordPropertiesCurrent({
+    properties: ["firstname", "lastname", "email", "company"],
+  });
 
   const [enrichData, setEnrichData] = useState(null);
   const [isEnriching, setIsEnriching] = useState(false);
@@ -102,11 +102,15 @@ const ContactEnrichment = () => {
   }
 
   if (!properties.email) {
-    return <EmptyState title="No email on this contact" />;
+    return (
+      <EmptyState title="No email on this contact">
+        <Text>Add an email address to enrich this contact.</Text>
+      </EmptyState>
+    );
   }
 
   return (
-    <Flex direction="column" gap="medium">
+    <Stack gap="medium">
       <Text format={{ fontWeight: "demibold" }}>
         {properties.firstname} {properties.lastname}
       </Text>
@@ -116,26 +120,22 @@ const ContactEnrichment = () => {
       <Divider />
 
       {enrichError && (
-        <Alert type="danger" title="Error">
+        <Alert variant="danger" title="Error">
           {enrichError}
         </Alert>
       )}
 
       {enrichData && (
-        <Flex direction="column" gap="small">
+        <Stack gap="small">
           <Text format={{ fontWeight: "demibold" }}>Enriched Data</Text>
           <Text>LinkedIn: {enrichData.linkedin || "N/A"}</Text>
           <Text>Title: {enrichData.title || "N/A"}</Text>
-        </Flex>
+        </Stack>
       )}
 
-      <Flex gap="small">
+      <Flex direction="row" gap="small">
         {/* LoadingButton prevents double submission during the async call */}
-        <LoadingButton
-          variant="primary"
-          onClick={enrichContact}
-          isLoading={isEnriching}
-        >
+        <LoadingButton variant="primary" onClick={enrichContact} loading={isEnriching}>
           Enrich Contact
         </LoadingButton>
 
@@ -144,16 +144,14 @@ const ContactEnrichment = () => {
           overlay={
             <Modal id="details-modal" title="Contact Details" width="md">
               <ModalBody>
-                <Flex direction="column" gap="small">
+                <Stack gap="small">
                   <Text>Portal: {context.portal.id}</Text>
                   <Text>User: {context.user.email}</Text>
                   <Text>Record ID: {context.crm?.objectId}</Text>
-                </Flex>
+                </Stack>
               </ModalBody>
               <ModalFooter>
-                <Button onClick={() => actions.closeOverlay("details-modal")}>
-                  Close
-                </Button>
+                <Button onClick={() => actions.closeOverlay("details-modal")}>Close</Button>
               </ModalFooter>
             </Modal>
           }
@@ -161,6 +159,6 @@ const ContactEnrichment = () => {
           View Details
         </Button>
       </Flex>
-    </Flex>
+    </Stack>
   );
 };

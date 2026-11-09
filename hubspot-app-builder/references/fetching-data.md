@@ -1,8 +1,12 @@
 # Fetching Data in UI Extensions
 
-> Official docs: https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensibility/fetching-data
+> Official docs: https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensions/fetching-data
 
-UI extensions fetch external data using `hubspot.fetch()` — not the browser's native `fetch`. The API routes requests through HubSpot's data fetch service, which signs them and appends metadata.
+UI extensions call your backend with `hubspot.fetch()`, not the browser's native `fetch`. Requests go through HubSpot's data fetch service, which signs them and appends metadata.
+
+For data from the current CRM record, you don't need a backend. Use the SDK hooks (`useRecordPropertiesCurrent`, `useRecordAssociationsCurrent`, `useRecordSearch`; see [`ui-extensions-sdk.md`](ui-extensions-sdk.md#hooks)) or CRM data components.
+
+> Apps that request **Sensitive Data scopes** cannot use `hubspot.fetch()` (or serverless functions). They can still include app cards.
 
 ---
 
@@ -10,45 +14,61 @@ UI extensions fetch external data using `hubspot.fetch()` — not the browser's 
 
 | Feature | Native `fetch()` | `hubspot.fetch()` |
 |---|---|---|
-| Custom headers | Supported | Not supported (only `Authorization`) |
-| Credentials mode | Supported | Not supported |
-| Cache control | Supported | Not supported |
-| Timeout | Browser default | 15 seconds max |
-| Payload size | Large | 1MB max |
-| Body | `JSON.stringify(obj)` + `Content-Type` header | Plain object — no stringify, no headers |
-| URL requirements | Any URL | Must be listed in `permittedUrls.fetch` |
+| Request headers | Any | Only `Authorization`; other headers are stripped |
+| Response headers | Readable | Not returned |
+| Credentials mode / cache control | Supported | Not supported |
+| Timeout | Browser default | 15 s default, configurable up to 120 s |
+| Payload size | Large | 1 MB request, 1 MB response |
+| Body | `JSON.stringify(obj)` + `Content-Type` header | Plain object, no stringify, no `Content-Type` |
+| URL requirements | Any URL | Must match an entry in `permittedUrls.fetch` |
 
 ---
 
 ## Method signature
 
+From `@hubspot/ui-extensions` 1.0.1 types:
+
 ```ts
-interface Options {
-  method?: 'GET' | 'PUT' | 'POST' | 'DELETE' | 'PATCH';
-  timeout?: number;
-  body?: { [key: string | number]: unknown };
+interface HubSpotFetchOptions {
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  timeout?: number;                              // ms; default 15000, max 120000
+  body?: { [key: string]: unknown };             // plain object
+  headers?: Headers | Record<string, string>;    // only Authorization is forwarded
 }
 
-hubspot.fetch(resource: string | URL): Promise<Response>
-hubspot.fetch(resource: string, options?: Options): Promise<Response>
+// hubspot.fetch(url, options?)
+declare function fetch(url: string | URL, options?: HubSpotFetchOptions): Promise<Response>;
 ```
 
-`body` is a plain object. Do not `JSON.stringify()` it or set `Content-Type` manually — HubSpot serializes and signs the request automatically.
+```tsx
+import { hubspot } from "@hubspot/ui-extensions";
+
+// GET
+const getRes = await hubspot.fetch("https://api.example.com/data", { method: "GET", timeout: 5000 });
+if (!getRes.ok) throw new Error(`HTTP ${getRes.status}`);
+const data = await getRes.json();
+
+// POST: body is a plain object, not JSON.stringify()
+const postRes = await hubspot.fetch("https://api.example.com/data", {
+  method: "POST",
+  body: { key: "value" },
+});
+```
 
 ---
 
 ## Limits
 
-- Max **20 concurrent requests** per account — excess requests return `429` and can be retried after a delay
-- Max **15 second timeout** per request (specify lower via `timeout` option)
-- Max **1MB** for both request and response payloads
-- HubSpot retries a request once on connection errors or `5XX` responses within the 15-second window
+- **20 concurrent requests per app per account.** Extra requests get `429` and can be retried after a delay.
+- **Timeout:** 15 seconds by default. Set a different value with `timeout`, up to 120 seconds.
+- **Payload:** 1 MB each for the request and the response.
+- **Retries:** HubSpot retries once automatically if the connection fails or your backend returns `5XX` within the timeout window. Make write endpoints idempotent.
 
 ---
 
-## Configuration
+## Configuration: `permittedUrls`
 
-Add target URLs to `permittedUrls.fetch` in `app-hsmeta.json`:
+Add backend URLs to `permittedUrls.fetch` in `src/app/app-hsmeta.json`:
 
 ```json
 "permittedUrls": {
@@ -58,40 +78,44 @@ Add target URLs to `permittedUrls.fetch` in `app-hsmeta.json`:
 }
 ```
 
-- URLs must be valid HTTPS — `localhost` is not allowed
-- Path prefixes are supported: `"https://api.example.com/v1/"` restricts calls to that path
-- Changes to `permittedUrls` require `hs project upload` to take effect, even during `hs project dev`
+- URLs must be valid HTTPS. `localhost` is not allowed (use the local proxy below).
+- Entries are **prefixes**: `"https://api.example.com/v1/"` allows every path under `/v1/`.
+- **No wildcards** (e.g. `https://*.example.com` is not supported).
+- Calls to unlisted URLs fail with `403 Forbidden`.
+- Changes to `permittedUrls` need `hs project upload` to take effect, even while `hs project dev` is running.
 
 ---
 
-## Automatic query parameters
+## Request metadata and signing
 
-HubSpot appends the following query parameters to every `hubspot.fetch()` request, available on your backend:
+HubSpot appends these query parameters to every `hubspot.fetch()` request:
 
 | Parameter | Description |
 |---|---|
-| `userId` | HubSpot user ID making the request |
-| `portalId` | HubSpot account (portal) ID |
+| `userId` | ID of the HubSpot user making the request |
+| `portalId` | HubSpot account ID |
 | `userEmail` | Email of the user making the request |
 | `appId` | App ID |
 
-Because the full URL (including these parameters) is part of the signature, they can be used to securely identify the caller without storing secrets in your React code.
+Requests carry `X-HubSpot-Signature-v3` and `X-HubSpot-Request-Timestamp` headers. The full URL, including these parameters, is part of the signature, so after validating it your backend can trust the caller's identity without any secret in React code.
+
+**Validate `X-HubSpot-Signature-v3` on every endpoint**, the same way as webhooks. See [`signature-validation.md`](signature-validation.md).
 
 ---
 
 ## Authorization header
 
-`hubspot.fetch()` supports passing an `Authorization` header. The recommended pattern is to first exchange the HubSpot signature for a short-lived access token, then use that token for subsequent requests to third-party APIs:
+`Authorization` is the only custom header that is forwarded. Recommended pattern: exchange the HubSpot signature for a short-lived token from your backend, then send that token to third-party APIs:
 
-```js
-// Step 1 — get a short-lived token from your backend
+```tsx
+// Step 1: get a short-lived token from your backend (signature-validated)
 const tokenRes = await hubspot.fetch("https://api.example.com/get-access-token", {
   method: "GET",
   timeout: 3000,
 });
 const { accessToken } = await tokenRes.json();
 
-// Step 2 — use the token for other requests
+// Step 2: use the token for other requests (the URL must also be in permittedUrls.fetch)
 const res = await hubspot.fetch("https://www.oauth-enabled-api.com/data", {
   method: "GET",
   timeout: 3000,
@@ -103,20 +127,18 @@ Your backend issues the token only after validating the HubSpot signature:
 
 ```js
 app.get("/get-access-token", (req, res) => {
-  validateHubSpotSignature(req, res);
-  res.json({
-    accessToken: generateShortLivedToken(req.query.userEmail),
-  });
+  if (!isValidHubSpotSignature(req)) return res.status(401).end(); // see signature-validation.md
+  res.json({ accessToken: generateShortLivedToken(req.query.userEmail) });
 });
 ```
 
-Do not store third-party secrets in React code. Use your backend as the proxy.
+Never store third-party secrets in React code. Use your backend as the proxy.
 
 ---
 
 ## Local development proxy
 
-`hubspot.fetch()` cannot call `localhost` directly. Use a `local.json` proxy to reroute requests during development:
+`hubspot.fetch()` cannot call `localhost` directly. Use a `local.json` proxy to reroute requests during `hs project dev`:
 
 ```json
 {
@@ -126,37 +148,24 @@ Do not store third-party secrets in React code. Use your backend as the proxy.
 }
 ```
 
-- Place `local.json` in the same directory as `hsproject.json`
-- Path-based routing is not supported — only origin-level mappings work (e.g. `"https://example.com/a"` → does not work)
-- Run `hs project upload` then `hs project dev` — the CLI confirms detected proxies
-- Proxied requests are **not signed** by default and do not include metadata query parameters
+- Location: the docs say to put `local.json` "in the same directory as `public-app.json`" (legacy wording). The equivalent location for 2026.09 projects is unverified.
+- Only origin-level mappings work. Path-based routing (e.g. `"https://example.com/a"`) is not supported.
+- Run `hs project upload`, then `hs project dev`. The CLI confirms when it detects the proxy.
+- If request metadata is missing, rename `local.json` to `local.json.bak` and restart the dev server.
 
-### Enabling signature validation during local development
+### Signing in local development
 
-To sign proxied requests locally, inject `CLIENT_SECRET` when starting the dev server:
+Proxied requests are **unsigned and carry no metadata query parameters** by default. To sign them, start the dev server with a `CLIENT_SECRET` and use the same value in your local backend:
 
 ```bash
 CLIENT_SECRET="your-secret" hs project dev
-```
-
-Use the same value in your local backend:
-
-```bash
 CLIENT_SECRET="your-secret" node server.js
 ```
 
-The value does not need to match your real app secret — it just needs to match on both sides during local development.
-
----
-
-## Signature validation
-
-Every `hubspot.fetch()` call reaches your backend as a signed request. Validate `X-HubSpot-Signature-v3` on every endpoint — the same way as webhooks. See [`signature-validation.md`](signature-validation.md) for the full implementation.
+The value doesn't need to be your real app secret; it only has to match on both sides.
 
 ---
 
 ## Monitoring
 
-View `hubspot.fetch()` request logs in HubSpot:
-
-**Development > Monitoring > Logs > UI Extensions > hs.fetch tab**
+View `hubspot.fetch()` request logs in HubSpot: **Development > Monitoring > Logs**, then the **UI Extensions** tab, then the **hs.fetch** tab.

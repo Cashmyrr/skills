@@ -1,8 +1,27 @@
 # App Configuration Reference
 
-> Official docs: https://developers.hubspot.com/docs/apps/developer-platform/build-apps/app-configuration
+> Official docs:
+> - [App configuration](https://developers.hubspot.com/docs/apps/developer-platform/build-apps/app-configuration)
+> - [Create an app](https://developers.hubspot.com/docs/apps/developer-platform/build-apps/create-an-app)
+> - [Manage apps in HubSpot](https://developers.hubspot.com/docs/apps/developer-platform/build-apps/manage-apps-in-hubspot)
 
-## `app-hsmeta.json` Full Schema
+Use HubSpot CLI **8.16.0+** (8.15.0 is the minimum for `isUserLevel`).
+
+## `hsproject.json`
+
+The top-level `hsproject.json` sets the platform version and the `src` directory. Every component lives under `src/`; app features go in `src/app/<feature-folder>/`, each with a config file ending in `-hsmeta.json`.
+
+```json
+{
+  "name": "my-project",
+  "srcDir": "src",
+  "platformVersion": "2026.09"
+}
+```
+
+`hs project create` still defaults `--platform-version` to `2026.03`: pass `--platform-version 2026.09`, or edit the file before the first upload.
+
+## `app-hsmeta.json` Full Schema (OAuth)
 
 ```json
 {
@@ -40,32 +59,43 @@
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `uid` | String | ✅ | Unique ID; up to 64 chars; alphanumeric + `_`, `-`, `.`. **Cannot be changed after first upload.** |
-| `type` | String | ✅ | Must be `"app"` (matches parent folder) |
-| `name` | String | ✅ | Display name in HubSpot; up to 200 chars; no leading/trailing spaces |
+| `uid` | String | ✅ | Unique within the project; up to 64 chars; letters, numbers, `_`, `-`, `.`. Must differ from every feature `uid`. **Don't change it after the first upload.** |
+| `type` | String | ✅ | Must be `"app"` (matches the parent folder) |
+| `name` | String | ✅ | Display name in HubSpot; up to 200 chars; no leading/trailing whitespace |
 | `description` | String | ✅ | App purpose for installing users; up to 8192 chars |
-| `logo` | String | ❌ | Relative path to logo (png, jpeg, gif, bmp) |
+| `logo` | String | ❌ | Path to a png, jpeg/jpg, gif or bmp file; should be recognizable at thumbnail size |
 | `distribution` | String | ✅ | `"marketplace"` or `"private"` |
-| `isUserLevel` | Boolean | ❌ | **New in 2026.09.** `true` turns on user-level access (app acts on behalf of the installing user, enforcing their HubSpot permissions). Defaults to `false` (account-level). Requires `auth.type: "oauth"`. See the *User-Level Access* section below. |
-| `auth` | Object | ✅ | Authentication configuration |
-| `permittedUrls` | Object | ❌ | URLs allowed for fetch, iframe, and image requests |
+| `isUserLevel` | Boolean | ❌ | `true` turns on user-level access (2026.09). Defaults to `false` (account-level). OAuth only. See [User-Level Access](#user-level-access-isuserlevel-202609). |
+| `auth` | Object | ✅ | See [Authentication](#authentication-auth) |
+| `permittedUrls` | Object | ❌ | `fetch`, `iframe` and `img` arrays. URLs must use HTTPS and include an authority; an optional path prefix restricts them further. |
 | `support.supportEmail` | String | ❌ | Support email |
-| `support.documentationUrl` | String | ❌ | Docs URL (HTTPS required) |
-| `support.supportUrl` | String | ❌ | Support page URL (HTTPS required) |
-| `support.supportPhone` | String | ❌ | Phone starting with `+` |
+| `support.documentationUrl` | String | ❌ | Docs URL (HTTPS) |
+| `support.supportUrl` | String | ❌ | Support page URL (HTTPS) |
+| `support.supportPhone` | String | ❌ | Phone number starting with `+` |
 
-## Distribution Options
+## Distribution and Install Limits
 
-### `marketplace` (public)
-- App can be listed on the [HubSpot App Marketplace](https://ecosystem.hubspot.com/marketplace/apps)
-- **Must** use `oauth` auth type
-- Limited to 25 installs before listing; unlimited after review
+| `distribution` | `auth.type` | Where it can be installed |
+|---|---|---|
+| `private` | `static` | **1** standard account at a time, plus up to 10 developer test accounts |
+| `private` | `oauth` | Up to **10** allowlisted accounts (developer test accounts not counted) |
+| `marketplace` | `oauth` | Up to **25** accounts before listing (test accounts not counted); unlimited once listed |
 
-### `private`
-- Restricted to specific accounts; use an allowlist
-- Can use either `oauth` (up to 10 accounts) or `static` (1 standard account)
+- `marketplace` apps **must** use `oauth`.
+- Until you sign the Acceptable Use Policy, a `marketplace` app can only be installed in developer test accounts.
+- Serverless functions only work in `private` + `static` apps.
 
 ## Authentication (`auth`)
+
+| Field | Required | Notes |
+|---|---|---|
+| `type` | ✅ | `"oauth"` or `"static"` |
+| `redirectUrls` | OAuth only | At least one; HTTPS, except `http://localhost` for testing. Remove it for static auth. |
+| `requiredScopes` | ✅ | At least one. The installing user must grant all of them. |
+| `optionalScopes` | ❌ (OAuth only) | Dropped at install if the installer lacks permission; dropped scopes are absent from the token |
+| `conditionallyRequiredScopes` | ❌ (OAuth only) | Required only when they appear in the `scope` parameter of the install URL |
+
+At a minimum, include the `read` scope for each CRM object or asset type the app accesses.
 
 ### OAuth (`type: "oauth"`)
 
@@ -79,27 +109,27 @@
 }
 ```
 
-- At least one `requiredScopes` is mandatory
-- `redirectUrls` must use HTTPS except `http://localhost` for testing
-- For marketplace apps: use the [sample OAuth Node.js server](https://github.com/hubspot/oauth-quickstart-nodejs)
+- Client ID and secret: **Development > Projects > [project] > [app] > Auth** tab (also where you **Rotate** the secret).
+- Install URL, token exchange and refresh: [`oauth.md`](oauth.md). HubSpot's Node.js sample: [oauth-quickstart-nodejs](https://github.com/hubspot/oauth-quickstart-nodejs).
 
 ### Static Token (`type: "static"`)
 
 ```json
 "auth": {
   "type": "static",
-  "requiredScopes": ["crm.objects.contacts.read"],
-  "optionalScopes": [],
-  "conditionallyRequiredScopes": []
+  "requiredScopes": ["crm.objects.contacts.read"]
 }
 ```
 
-- Remove `redirectUrls` entirely
-- Single-account installation only
-- Access token available in HubSpot Distribution tab after install
-- Rotate token every 6 months for security
+- **Only `requiredScopes`**: static apps can't define optional or conditionally required scopes.
+- Remove `redirectUrls`.
+- Single standard account. Install it from the app's **Distribution** tab, or with `hs project install-app`.
+- The access token is on the **Distribution** tab. Only super admins and users with a developer seat can view or rotate it. HubSpot recommends rotating it about every 6 months.
+- After changing scopes, reinstall with the **Reinstall URL** on the Distribution tab.
 
-## User-Level Access (`isUserLevel`, 2026.09+)
+## User-Level Access (`isUserLevel`, 2026.09)
+
+Requires CLI 8.15.0+ and `"platformVersion": "2026.09"`.
 
 ```json
 "config": {
@@ -112,17 +142,19 @@
 
 | Rule | Detail |
 |---|---|
-| Auth type | **OAuth only** — `static` auth does not support user-level access |
-| Distribution | Both `marketplace` and `private` supported |
+| Auth type | **OAuth only**; `static` auth doesn't support user-level access |
+| Distribution | Both `marketplace` and `private` |
 | Default | Omitted or `false` → account-level access |
-| Migration | Existing account-level apps **cannot** be converted; create a new app |
+| Migration | Existing account-level apps **can't** be converted; create a new app |
+| Install | Any user whose permissions match the app's scopes can install it for themselves |
 | Audit logs | User actions are annotated `[User] via [app name]` |
-| Backend | App pages and app settings require **your own backend service** for per-user data isolation |
+| Backend | App pages and app settings need **your own backend service** for per-user data isolation |
+| Marketplace | Apps that mainly connect HubSpot to external generative AI tools must use user-level access **or** HubSpot's MCP Server |
 
 **Not supported in user-level apps:** app cards, serverless functions, webhooks (v3/v4), custom workflow actions, agent tools, app events, app objects, CMS, SCIM.
 **Partial:** APIs, app pages, app settings. **Full:** `hubspot.fetch()`, UIE hooks, MCP (MCP is user-level *only*).
 
-See the feature matrix and unsupported-scope list in `SKILL.md`.
+See the feature matrix and API/scope support in `SKILL.md`, and [`scopes.md`](scopes.md#scopes-unsupported-under-user-level-access-202609).
 
 ## Scopes Reference
 
@@ -143,19 +175,19 @@ Common scopes to get started:
 
 ## `permittedUrls`
 
-- `fetch`: URLs your extension can call via `hubspot.fetch()`. Must be HTTPS.
+- `fetch`: URLs your extension can call via `hubspot.fetch()`
 - `iframe`: URLs loadable inside iframe modals
 - `img`: URLs for image sources
 
-Path prefixes supported: `"https://api.example.com/v1/"` restricts to that path.
+All entries must use HTTPS and include an authority. A path prefix (`"https://api.example.com/v1/"`) restricts access to that path.
 
 ## Adding Features to an Existing Project
 
-Run `hs project add` from the project root directory and select the feature(s) to add. This generates the corresponding `*-hsmeta.json` and React files.
+Run `hs project add` from the project root and pick features interactively, or pass `--features` with any of: `app-function-endpoint`, `app-function`, `app-event`*, `app-object`*, `app-object-association`*, `card`, `settings`, `page`, `webhooks`, `workflow`, `scim` (*requires HubSpot approval). It generates the matching `*-hsmeta.json` and source files.
 
 ## UID Rules (Critical)
 
 - UIDs uniquely identify components across builds
-- **Changing a UID after first upload creates a new component** — old data/positions are lost
-- Each feature has its own UID distinct from the app-level UID
+- **Changing a UID after the first upload creates a new component**; old data and card positions are lost
+- Each feature has its own UID, distinct from the app-level UID
 - UIDs must be unique within the project (no two features share the same UID)
