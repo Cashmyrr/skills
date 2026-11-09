@@ -1,5 +1,7 @@
 # HubSpot App Features Reference
 
+> **User-level access (2026.09):** if your app sets `isUserLevel: true`, most features below are unavailable. Only app pages, app settings, `hubspot.fetch()`, UIE hooks, MCP, and a subset of the CRM/Sales/Sequences APIs are supported. App cards, serverless functions, webhooks, custom workflow actions, agent tools, app events, app objects, CMS, and SCIM are **account-level only**. See the feature matrix in `SKILL.md`.
+
 ## App Pages (formerly App Homes) — Updated 2026.03
 
 > Official docs: https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensions/overview#app-home-pages

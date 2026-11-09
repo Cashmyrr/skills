@@ -1,20 +1,52 @@
 ---
 name: hubspot-app-builder
-description: This skill should be used when the user asks to "build a HubSpot app", "create a HubSpot app", "add a card to HubSpot", "create an app card", "build a UI extension", "set up HubSpot webhooks", "configure HubSpot app", "add a settings page to HubSpot app", "build a HubSpot home page", "fetch data in HubSpot extension", "list an app on the HubSpot marketplace", "submit a HubSpot app listing", "marketplace listing requirements", "add serverless functions to HubSpot app", or mentions building on the HubSpot developer platform 2026.03. Provides comprehensive guidance for building full HubSpot apps with best practices, CLI commands, file structure, serverless functions, and App Marketplace listing requirements.
-version: 1.2.1
+description: This skill should be used when the user asks to "build a HubSpot app", "create a HubSpot app", "add a card to HubSpot", "create an app card", "build a UI extension", "set up HubSpot webhooks", "configure HubSpot app", "add a settings page to HubSpot app", "build a HubSpot home page", "fetch data in HubSpot extension", "configure user-level access", "build a user-level HubSpot app", "list an app on the HubSpot marketplace", "submit a HubSpot app listing", "marketplace listing requirements", "add serverless functions to HubSpot app", "validate a HubSpot project", "deploy a HubSpot app to production", "HubSpot app best practices", "review my HubSpot app code", or mentions building on the HubSpot developer platform 2026.09. Provides comprehensive guidance for building full HubSpot apps with best practices, CLI commands, file structure, serverless functions, user-level access, and App Marketplace listing requirements.
+version: 1.4.0
 ---
 
-# HubSpot App Builder (Platform 2026.03)
+# HubSpot App Builder (Platform 2026.09)
 
-This skill guides the development of full HubSpot apps on the latest developer platform (version `2026.03`), covering project creation, configuration, UI extensions, serverless functions, agent tools, webhooks, and distribution.
+This skill guides the development of full HubSpot apps on the latest developer platform (version `2026.09`), covering project creation, configuration, UI extensions, serverless functions, user-level access, agent tools, webhooks, and distribution.
 
-> **Platform version 2026.03** was released on March 30, 2026 (GA confirmed in Spring 2026 Spotlight, April 14, 2026). It re-introduces full serverless function support for apps (including static-auth apps), introduces agent tools for Breeze Agents, expands App Homes into multi-page App Pages, and adds code sharing via npm workspaces. Previous version 2025.2 is now in "Supported" status.
+> **Platform version 2026.09** became available on September 8, 2026 and is the **Current** version. It adds support for **user-level access** in apps — apps that act on behalf of a specific user and enforce that user's in-app HubSpot permissions instead of broad account-wide access. It carries forward all functionality from 2025.2 and 2026.03.
+>
+> **Version status today:** `2026.09` Current · `2026.03` Supported · `2025.2` Supported · `2025.1`, `2023.2`, `2023.1` Sunset. HubSpot ships a GA version every 6 months (March and September); a version is Current for 6 months, Supported until 18 months after GA, then Unsupported (uploads fail).
+
+## Non-Negotiable Rules (read before writing any code)
+
+These apply to every HubSpot project. Details, rationale and examples: [`references/best-practices.md`](references/best-practices.md).
+
+1. **Current platform version** (`2026.09`) and **pinned dependencies** — never `"latest"`.
+2. **Build profiles per environment** (`hs project profile add dev|qa|prod`); develop in **developer test accounts**, never in a client's production portal.
+3. **No secret in front-end code or in the repo.** Secrets go in serverless function secrets or your backend.
+4. **Least-privilege scopes**: only what the code calls; extras go in `optionalScopes`.
+5. **Validate `X-HubSpot-Signature-v3`** on every backend endpoint (webhooks and `hubspot.fetch()` targets).
+6. **Every data view handles loading, error and empty states.**
+7. **Respect API limits**: batch endpoints, pagination, caching, webhooks over polling, backoff on `429`.
+8. **Serverless functions never return raw errors**; webhook handlers are idempotent.
+9. **Production deploys go through CI** with the `prod` profile, and you know the build ID to roll back to.
+10. **Nothing is "done" before [`references/validation.md`](references/validation.md) passes**: `hs project validate`, `hs project lint`, static checks, scope review, test-account run, Definition of Done checklist.
+
+## Development Workflow (always follow this order)
+
+```
+1. hs project create / hs project add          → scaffold
+2. hs project profile add dev|qa|prod           → environments
+3. hs test-account create --config-path …       → reproducible test account
+4. hs project dev -p dev                        → build with hot reload
+5. hs project validate && hs project lint       → blocking checks
+6. Static checks + scope review                 → references/validation.md
+7. hs project upload -p qa  → test with a restricted user
+8. Merge → CI deploys with -p prod              → note previous build ID for rollback
+```
+
+When reviewing existing code, apply the same rules and report each violation with its fix.
 
 ## Prerequisites
 
-- HubSpot CLI v8.3.0+: `npm install -g @hubspot/cli@latest`
+- HubSpot CLI v8.4.0+: `npm install -g @hubspot/cli@latest`
 - Authenticate: `hs account auth`
-- Node.js 22+ (minimum raised to v22 in 2025.2 and carried into 2026.03; was v20 in 2025.1)
+- Node.js 22+ (minimum raised to v22 in 2025.2 and carried into 2026.03 and 2026.09; was v20 in 2025.1)
 - A HubSpot developer account
 - Enterprise subscription required for production serverless functions (developer test accounts work without)
 
@@ -40,7 +72,7 @@ hs project add
 
 ```
 my-project-folder/
-├── hsproject.json                    # Must include "platformVersion": "2026.03"
+├── hsproject.json                    # Must include "platformVersion": "2026.09"
 ├── packages/                         # Shared code (npm workspaces, optional)
 │   └── shared-utils/
 │       ├── index.ts
@@ -62,7 +94,7 @@ my-project-folder/
         │   ├── Settings.tsx
         │   ├── settings-hsmeta.json
         │   └── package.json
-        ├── functions/                # Serverless functions (2026.03 format)
+        ├── functions/                # Serverless functions (2026.03+ format)
         │   ├── myFunction.js
         │   ├── myFunction-hsmeta.json   # Individual config per function
         │   └── package.json
@@ -187,7 +219,7 @@ const MyCard = ({ context, addAlert }) => {
 ### SDK Hooks (Preferred Approach)
 
 ```tsx
-import { hubspot, Button, useExtensionApi } from "@hubspot/ui-extensions";
+import { hubspot, Button, LoadingSpinner, ErrorState, EmptyState, useExtensionApi } from "@hubspot/ui-extensions";
 import { useCrmProperties } from "@hubspot/ui-extensions/crm";
 
 hubspot.extend<'crm.record.tab'>(() => <MyCard />);
@@ -197,9 +229,12 @@ const MyCard = () => {
   const { context, actions } = useExtensionApi<'crm.record.tab'>();
 
   // Fetch CRM properties from the current record
-  const { properties, isLoading } = useCrmProperties(["firstname", "lastname", "email"]);
+  const { properties, isLoading, error, refetch } = useCrmProperties(["firstname", "lastname", "email"]);
 
-  if (isLoading) return <Text>Loading...</Text>;
+  // Always handle loading, error and empty states
+  if (isLoading) return <LoadingSpinner label="Loading..." />;
+  if (error) return <ErrorState title="Couldn't load this record"><Button onClick={refetch}>Retry</Button></ErrorState>;
+  if (!properties.firstname) return <EmptyState title="No first name on this record" />;
 
   return (
     <Button onClick={() => actions.addAlert({ message: `Hello ${properties.firstname}!` })}>
@@ -246,18 +281,18 @@ Your backend must validate `X-HubSpot-Signature-v3` on every incoming request �
 
 For the full guide (proxy setup, Authorization header pattern, local dev signing, monitoring), see [`references/fetching-data.md`](references/fetching-data.md).
 
-## Serverless Functions (2026.03 Format)
+## Serverless Functions (2026.03+ Format)
 
-Platform version 2026.03 re-introduces full serverless function support for apps, including apps using static auth. Serverless functions execute server-side JavaScript within HubSpot's infrastructure, eliminating the need for external servers.
+Platform version 2026.03 re-introduced full serverless function support for apps, including apps using static auth, and 2026.09 carries it forward. **Serverless functions are not supported in user-level apps** — see [User-Level Access](#user-level-access-new-in-202609). Serverless functions execute server-side JavaScript within HubSpot's infrastructure, eliminating the need for external servers.
 
-> **Important:** 2026.03 uses a **new per-function `-hsmeta.json` config** instead of the single `serverless.json` used in 2025.1. Each function has its own config file in `src/app/functions/`.
+> **Important:** 2026.03 and 2026.09 use a **per-function `-hsmeta.json` config** instead of the single `serverless.json` used in 2025.1. Each function has its own config file in `src/app/functions/`.
 
 ### Types of Serverless Functions
 
 - **Private (App) functions** — internal functions called by UI extensions from App Cards, App Pages, and App Settings. Requires Enterprise subscription or a free developer test account.
 - **Public endpoint functions** — HTTP-accessible endpoints. Requires Content Hub Enterprise. **Not available in developer test accounts.**
 
-### Directory Structure (2026.03)
+### Directory Structure (2026.03+)
 
 ```
 src/app/functions/
@@ -313,10 +348,11 @@ exports.main = async (context = {}) => {
 
   try {
     const res = await hubspotClient.crm.contacts.basicApi.getPage();
-    return res;
+    return { ok: true, data: res.results };
   } catch (err) {
-    console.error(err);
-    return err;
+    // Never return the raw error: it can leak headers or tokens to the front end
+    console.error("getContacts failed", err.code || err.message);
+    return { ok: false, error: { message: "Could not load contacts", status: err.code || 500 } };
   }
 };
 ```
@@ -330,25 +366,100 @@ exports.main = async (context = {}) => {
 - Enterprise subscription required for production (test accounts work without)
 - Functions can now run in **Developer Test Accounts** for safer iteration before production
 
-### Migrating Serverless Functions to 2026.03
+## Migrating to 2026.09
 
-Migration path depends on your current version:
+Requires HubSpot CLI **v8.4.0+**. Migration path depends on your current version:
 
-**From 2025.2:**
-1. Update `platformVersion` from `"2025.2"` to `"2026.03"` in `hsproject.json`
+**From 2026.03 or 2025.2:**
+1. Update `platformVersion` to `"2026.09"` in `hsproject.json`
 2. Run `hs project upload`
 
 **From 2025.1, 2023.2, or 2023.1:**
-1. Run `hs project migrate` in your project directory and follow the prompts
+1. Run `hs project migrate` in your project directory and follow the prompts — all components migrate automatically to 2026.09
 
 **From legacy public apps (non-project-based):**
-1. Run `hs app migrate` and follow the prompts
+1. Run `hs app migrate` and follow the prompts (choose app → confirm components → project name, local path, UIDs)
+2. This preserves the original auth credentials, app features, and installs; no backend changes required
+3. Build #1 captures the app's pre-migration configuration as a baseline you can safely redeploy to revert later changes
 
 **Key migration notes:**
 - Environment variables from old `serverless.json` must be re-added as secrets using `hs secret add`
 - The old `serverless.json` single-config is replaced by individual `-hsmeta.json` files per function in `src/app/functions/`
+- After migration, features represented in project source files must be managed **locally through the project** — they are no longer editable in the app management UI or via the previous developer APIs
+- Migrating a legacy **non-project-based private app** to 2026.09 is **not currently supported**
+- Existing account-level apps **cannot be converted to user-level access** — create a new app instead
 
-> **Warning:** Migrating legacy private or public apps to 2026.03 is irreversible — you cannot downgrade back.
+> **Warning:** Migrating legacy private or public apps is irreversible — you cannot downgrade back.
+
+## User-Level Access (New in 2026.09)
+
+By default apps use **account-level access**: a single uniform level of access for every user in the account. Version 2026.09 adds **user-level access**, where the app's features and API access are bound to the installing user's own HubSpot permissions, and each user installs the app for themselves.
+
+**Choose user-level** when the app should behave differently depending on who is using it. **Keep account-level** for account-wide automation or syncing data across tools.
+
+### Enabling It
+
+Add `isUserLevel: true` to the `config` object of `src/app/app-hsmeta.json`:
+
+```json
+{
+  "uid": "your-app-uid",
+  "type": "app",
+  "config": {
+    "name": "Your App Name",
+    "distribution": "marketplace",
+    "isUserLevel": true,
+    "auth": {
+      "type": "oauth",
+      "redirectUrls": ["http://localhost:4000/oauth2/hubspot-callback"]
+    }
+  }
+}
+```
+
+Omitting the field (or setting it to `false`) keeps account-level access. Once uploaded, actions by installing users are annotated `[User] via [app name]` in HubSpot's app audit logs.
+
+### Constraints
+
+- **OAuth only** — apps with `static` auth cannot use user-level access
+- Both `marketplace` and `private` distribution are supported
+- **No migration path** — an existing account-level app cannot be switched to user-level; build a new app
+- For app pages and app settings you must run **your own backend service** to provide per-user functionality and to avoid leaking data between individual user installs
+
+### Feature Support Matrix
+
+| Feature | Account-level | User-level |
+|---|---|---|
+| APIs | ✅ | ⚠️ Partial |
+| MCP | ❌ | ✅ |
+| App pages | ✅ | ⚠️ Partial |
+| App settings | ✅ | ⚠️ Partial |
+| `hubspot.fetch()` | ✅ | ✅ |
+| UIE hooks | ✅ | ✅ |
+| App cards | ✅ | ❌ |
+| Serverless functions | ✅ | ❌ |
+| Webhooks (v3, v4) | ✅ | ❌ |
+| Custom workflow actions | ✅ | ❌ |
+| Agent tools | ✅ | ❌ |
+| App events | ✅ | ❌ |
+| App objects | ✅ | ❌ |
+| CMS | ✅ | ❌ |
+| SCIM | ✅ | ❌ |
+
+### API and Scope Support
+
+Supported REST API areas: **Automation** (Sequences — create enrollments and manage sequence definitions only; read, unenroll, and pause do **not** yet support user-level), **CRM**, and **Sales**.
+
+All scopes tied to those supported endpoints work with user-level apps **except**:
+
+- `cpq.quote_templates.read`
+- `cpq.quotes.read`
+- `cpq.quotes.write`
+- `marketing.lead_scoring.read`
+- `marketing.lead_scoring.write`
+- `crm.schemas.custom.write`
+
+> Full reference: [Configure user-level access for an app](https://developers.hubspot.com/docs/apps/developer-platform/build-apps/authentication/user-level-apps)
 
 ## Agent Tools (New in 2026.03)
 
@@ -502,8 +613,8 @@ Both must be validated the same way using `Signature.isValid()` from `@hubspot/a
   "name": "my-card",
   "version": "0.1.0",
   "dependencies": {
-    "@hubspot/ui-extensions": "latest",
-    "react": "^18.2.0"
+    "@hubspot/ui-extensions": "1.0.1",
+    "react": "18.2.0"
   },
   "devDependencies": {
     "typescript": "^5.3.3"
@@ -512,6 +623,8 @@ Both must be validated the same way using `Signature.isValid()` from `@hubspot/a
 ```
 
 Install: `hs project install-deps`
+
+Pin versions you have tested (check with `npm view @hubspot/ui-extensions version`) and commit the lockfile — `"latest"` makes builds non-reproducible.
 
 ## Distribution & Auth Summary
 
@@ -529,7 +642,7 @@ Before submitting to the HubSpot App Marketplace, the app must meet these key re
 - OAuth is the **sole** authorization method — no API keys or private app tokens
 - At least **3 active installs** from unaffiliated accounts with OAuth-authenticated API activity in the past 30 days
 - Only request scopes the app actually uses; all requested scopes must appear in the *Shared data* table
-- Must run on a **supported platform version** (2025.2+ today, 2026.03 recommended)
+- Must run on a **supported platform version** (2025.2+ today, 2026.09 recommended)
 - Must use a **supported date-based API version** for certified apps
 - Classic CRM cards are **not allowed** for new listings/certifications (must migrate to App Cards by **October 31, 2026**)
 - Agent tools are a **reviewable surface** — deploys fail until tools pass review for compliance with [agent tool listing requirements](https://developers.hubspot.com/docs/apps/developer-platform/list-apps/agent-tool-listing-requirements)
@@ -559,6 +672,14 @@ After starting, a local development homepage appears in the test account showing
 
 Note (Chrome 142+): Accept the local network access popup from `app.hubspot.com` on first launch.
 
+## Environments, Validation and Deploy
+
+- **Build profiles**: `hs project profile add <name> --target-account <id>` creates `src/hsprofile.<name>.json` (`accountId` + `variables`). Use `${VAR}` in `*-hsmeta.json` and `context.variables.VAR` in UI extensions. Once profiles exist, pass `-p <profile>` to `upload`, `dev` and `deploy`.
+- **Test accounts**: `hs test-account create --config-path ./test-accounts/qa.json`, seed with `hs test-account import-data`.
+- **Validation**: `hs project validate` (config and structure) and `hs project lint` (ESLint v9 on UI components) before every upload — full procedure in [`references/validation.md`](references/validation.md).
+- **Deploy and rollback**: `hs project list-builds --project <name>`, `hs project deploy --build <id> -p prod`. New projects auto-deploy after a successful build; use `hs project upload --skip-auto-deploy` to build only.
+- **CI/CD**: official GitHub Actions `HubSpot/hubspot-project-actions/project-upload@v1.1.0` with one workflow per branch/profile — template in [`references/validation.md`](references/validation.md).
+
 ## Debugging
 
 View logs: **Development > Monitoring > Logs > UI Extensions** in HubSpot.
@@ -585,6 +706,8 @@ For detailed configuration and patterns, consult:
 - **`references/features.md`** — App events, app objects (open beta), settings page, home page
 - **`references/signature-validation.md`** — Full signature validation implementation for webhooks and card/settings page fetch endpoints
 - **`references/marketplace-listing.md`** — Full App Marketplace listing requirements, brand rules, app card criteria, and review process
+- **`references/best-practices.md`** — Rules with rationale and wrong/right examples: versioning, environments, auth and secrets, API rate limits, UI states, serverless functions, webhooks, deploy and rollback, things to never do
+- **`references/validation.md`** — Validation procedure and Definition of Done: CLI checks, static checks, scope review, test-account checklist, GitHub Actions template, rollback
 
 ### Official Documentation
 
@@ -610,5 +733,11 @@ For detailed configuration and patterns, consult:
 - [Code sharing with npm workspaces](https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensions/tools/code-sharing-with-npm-workspaces)
 - [Developer MCP Server setup](https://developers.hubspot.com/docs/developer-tooling/local-development/mcp-server)
 - [MCP Auth Apps (integrate with remote MCP Server)](https://developers.hubspot.com/docs/apps/developer-platform/build-apps/integrate-with-the-remote-hubspot-mcp-server)
-- [Migrate to 2026.03](https://developers.hubspot.com/docs/apps/developer-platform/build-apps/migrate-an-app/overview)
+- [Migrate to 2026.09](https://developers.hubspot.com/docs/apps/developer-platform/build-apps/migrate-an-app/migrate-to-the-latest-platform-version)
+- [Configure user-level access](https://developers.hubspot.com/docs/apps/developer-platform/build-apps/authentication/user-level-apps)
 - [Platform versioning](https://developers.hubspot.com/docs/developer-tooling/platform/versioning)
+- [CLI project commands](https://developers.hubspot.com/docs/developer-tooling/local-development/hubspot-cli/project-commands)
+- [Build with config profiles](https://developers.hubspot.com/docs/developer-tooling/local-development/build-with-config-profiles)
+- [Configurable test accounts](https://developers.hubspot.com/docs/developer-tooling/local-development/configurable-test-accounts)
+- [Set up GitHub Actions](https://developers.hubspot.com/docs/developer-tooling/third-party-tools/set-up-github-actions)
+- [API usage guidelines and limits](https://developers.hubspot.com/docs/developer-tooling/platform/usage-guidelines)

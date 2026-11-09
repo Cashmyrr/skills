@@ -243,3 +243,6 @@ Prefer `useCrmProperties` hook instead — it has automatic state management and
 - Validate `X-HubSpot-Signature-v3` on every backend endpoint called from a CRM card or settings page. When any UI extension (card, settings page, home page) calls `hubspot.fetch()`, HubSpot proxies the request to your server and signs it with `X-HubSpot-Signature-v3`. Validate using `Signature.isValid()` from `@hubspot/api-client` — the same as webhook validation. See [`signature-validation.md`](signature-validation.md) for the full implementation.
 - Never store secrets in React code — proxy secrets through your backend
 - Use `logger` for debugging deployed extensions, not `console.log`
+- Handle loading, error and empty states for every hook result (`isLoading`, `error`, empty data)
+
+Full rules and the validation procedure: [`best-practices.md`](best-practices.md), [`validation.md`](validation.md).

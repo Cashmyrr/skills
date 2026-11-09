@@ -4,6 +4,28 @@
 
 Only request scopes your app actually uses. All requested scopes must appear in the *Shared data* table of your Marketplace listing. Use granular scopes (e.g. `crm.objects.contacts.read`) over broad ones when both are available.
 
+At minimum an app must include the **read** scope for each CRM object or asset type it touches (e.g. `crm.objects.contacts.read`). To find the scopes an endpoint needs, check the *Required Scopes* section of its reference article or the *Scope requirements* block of its API guide.
+
+## Scope Types
+
+| Type | Behavior |
+|---|---|
+| `requiredScopes` | Must be authorized and must appear in the install URL's `scope` query param. The only type available to `static` auth apps. |
+| `conditionallyRequiredScopes` | Required **only if** present in the install URL's `scope` param. Lets you ship tiered install URLs — one including the scope for users with the feature, one omitting it. Install fails if the scope is in the URL but the user lacks access. |
+| `optionalScopes` | Not required to install. Passed via the `optional_scope` query param; the user confirms each one individually. Use for tier-gated data such as `crm.objects.custom.read` (Enterprise). |
+
+## Deprecated Scopes
+
+These map to deprecated APIs and **should not be used for new apps**: `accounting`, `actions`, `e-commerce`, `integration-sync`, `social`.
+
+## Scopes Without a Current API
+
+These may still appear on app configuration pages but have **no corresponding API** today: `cms.knowledge_base.articles.write`, `cms.knowledge_base.articles.publish`, `cms.knowledge_base.settings.read`, `cms.knowledge_base.settings.write`, `ctas.read`.
+
+## Scopes Unsupported Under User-Level Access (2026.09)
+
+User-level apps support the scopes tied to the supported Automation (Sequences), CRM, and Sales endpoints, **except**: `cpq.quote_templates.read`, `cpq.quotes.read`, `cpq.quotes.write`, `marketing.lead_scoring.read`, `marketing.lead_scoring.write`, `crm.schemas.custom.write`.
+
 ---
 
 ## CRM Objects
