@@ -3,8 +3,9 @@
   "type": "app",
   "config": {
     "name": "My HubSpot App",
-    "description": "An example HubSpot app built on platform 2026.03.",
+    "description": "An example HubSpot app built on platform 2026.09.",
     "distribution": "marketplace",
+    "isUserLevel": false,
     "auth": {
       "type": "oauth",
       "redirectUrls": ["http://localhost:3000/oauth-callback"],

@@ -12,7 +12,7 @@ Skills are "onboarding guides" for AI agents — they provide procedural knowled
 
 ### [`hubspot-app-builder`](./hubspot-app-builder/SKILL.md)
 
-Build full HubSpot apps on the latest developer platform (2026.03).
+Build full HubSpot apps on the latest developer platform (2026.09), with enforced best practices and a validation procedure.
 
 Covers the entire development lifecycle: project creation via CLI, file structure, app configuration, UI extension cards, SDK hooks, external data fetching, serverless functions, UI components, webhooks, settings pages, app home pages, app events, app objects, and distribution.
 
@@ -27,6 +27,8 @@ Covers the entire development lifecycle: project creation via CLI, file structur
 - `references/fetching-data.md` — `hubspot.fetch()` guide, limits, proxy setup, signature validation
 - `references/signature-validation.md` — X-HubSpot-Signature-v3 validation for webhooks and fetch endpoints
 - `references/marketplace-listing.md` — App Marketplace listing requirements, brand rules, review process
+- `references/best-practices.md` — rules with wrong/right examples: environments, secrets, scopes, API limits, UI states, functions, webhooks, deploy
+- `references/validation.md` — validation procedure and Definition of Done (CLI checks, static checks, scope review, CI template, rollback)
 - `examples/` — working card component, card config, and app config templates
 
 ---

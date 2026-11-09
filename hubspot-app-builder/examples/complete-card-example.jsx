@@ -1,5 +1,6 @@
 /**
- * Complete App Card Example — HubSpot Platform 2026.03
+ * Complete App Card Example — HubSpot Platform 2026.09
+ * Note: app cards are account-level only; they are not supported in user-level apps.
  *
  * File: src/app/cards/ContactEnrichment.jsx
  * Config: src/app/cards/contact-enrichment-hsmeta.json
@@ -9,6 +10,7 @@
  * - Fetching external data with hubspot.fetch()
  * - Alert actions
  * - Modal overlay
+ * - Loading, error and empty states (required on every data view)
  * - TypeScript generics (works as .tsx too)
  */
 
@@ -18,7 +20,10 @@ import {
   Flex,
   Text,
   Button,
+  LoadingButton,
   LoadingSpinner,
+  ErrorState,
+  EmptyState,
   Alert,
   Modal,
   ModalBody,
@@ -33,7 +38,12 @@ hubspot.extend(() => <ContactEnrichment />);
 
 const ContactEnrichment = () => {
   const { context, actions } = useExtensionApi();
-  const { properties, isLoading: propsLoading } = useCrmProperties([
+  const {
+    properties,
+    isLoading: propsLoading,
+    error: propsError,
+    refetch,
+  } = useCrmProperties([
     "firstname",
     "lastname",
     "email",
@@ -50,7 +60,8 @@ const ContactEnrichment = () => {
 
     try {
       const response = await hubspot.fetch(
-        `https://api.example.com/enrich?email=${properties.email}`,
+        // Always encode CRM data placed in a URL (or send it in a POST body)
+        `https://api.example.com/enrich?email=${encodeURIComponent(properties.email)}`,
         { method: "GET", timeout: 10000 }
       );
 
@@ -82,6 +93,18 @@ const ContactEnrichment = () => {
     return <LoadingSpinner label="Loading contact data..." />;
   }
 
+  if (propsError) {
+    return (
+      <ErrorState title="Couldn't load this contact">
+        <Button onClick={refetch}>Retry</Button>
+      </ErrorState>
+    );
+  }
+
+  if (!properties.email) {
+    return <EmptyState title="No email on this contact" />;
+  }
+
   return (
     <Flex direction="column" gap="medium">
       <Text format={{ fontWeight: "demibold" }}>
@@ -107,13 +130,14 @@ const ContactEnrichment = () => {
       )}
 
       <Flex gap="small">
-        <Button
+        {/* LoadingButton prevents double submission during the async call */}
+        <LoadingButton
           variant="primary"
           onClick={enrichContact}
-          disabled={isEnriching || !properties.email}
+          isLoading={isEnriching}
         >
-          {isEnriching ? "Enriching..." : "Enrich Contact"}
-        </Button>
+          Enrich Contact
+        </LoadingButton>
 
         <Button
           variant="secondary"

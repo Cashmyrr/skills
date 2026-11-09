@@ -13,6 +13,7 @@
     "description": "Description for installing users. Up to 8192 chars.",
     "logo": "/app/app-logo.png",
     "distribution": "marketplace",
+    "isUserLevel": false,
     "auth": {
       "type": "oauth",
       "redirectUrls": ["http://localhost:3000/oauth-callback"],
@@ -45,6 +46,7 @@
 | `description` | String | ✅ | App purpose for installing users; up to 8192 chars |
 | `logo` | String | ❌ | Relative path to logo (png, jpeg, gif, bmp) |
 | `distribution` | String | ✅ | `"marketplace"` or `"private"` |
+| `isUserLevel` | Boolean | ❌ | **New in 2026.09.** `true` turns on user-level access (app acts on behalf of the installing user, enforcing their HubSpot permissions). Defaults to `false` (account-level). Requires `auth.type: "oauth"`. See the *User-Level Access* section below. |
 | `auth` | Object | ✅ | Authentication configuration |
 | `permittedUrls` | Object | ❌ | URLs allowed for fetch, iframe, and image requests |
 | `support.supportEmail` | String | ❌ | Support email |
@@ -96,6 +98,31 @@
 - Single-account installation only
 - Access token available in HubSpot Distribution tab after install
 - Rotate token every 6 months for security
+
+## User-Level Access (`isUserLevel`, 2026.09+)
+
+```json
+"config": {
+  "name": "My App",
+  "distribution": "marketplace",
+  "isUserLevel": true,
+  "auth": { "type": "oauth", "redirectUrls": ["http://localhost:4000/oauth2/hubspot-callback"] }
+}
+```
+
+| Rule | Detail |
+|---|---|
+| Auth type | **OAuth only** — `static` auth does not support user-level access |
+| Distribution | Both `marketplace` and `private` supported |
+| Default | Omitted or `false` → account-level access |
+| Migration | Existing account-level apps **cannot** be converted; create a new app |
+| Audit logs | User actions are annotated `[User] via [app name]` |
+| Backend | App pages and app settings require **your own backend service** for per-user data isolation |
+
+**Not supported in user-level apps:** app cards, serverless functions, webhooks (v3/v4), custom workflow actions, agent tools, app events, app objects, CMS, SCIM.
+**Partial:** APIs, app pages, app settings. **Full:** `hubspot.fetch()`, UIE hooks, MCP (MCP is user-level *only*).
+
+See the feature matrix and unsupported-scope list in `SKILL.md`.
 
 ## Scopes Reference
 
