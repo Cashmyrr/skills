@@ -77,7 +77,7 @@ After migrating:
 
 > Docs: [UI extensions SDK versioning](https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensions/ui-extensions-sdk/versioning) · details: [`ui-extensions-sdk.md`](ui-extensions-sdk.md)
 
-v1 was released in November 2026. Support windows: v0 until March 2028, v1 until April 2028. Pin `"@hubspot/ui-extensions": "1.0.1"` and `"react": "18.3.1"` (the exact peer version).
+v1 was released in November 2026. Support windows: v0 until March 2028, v1 until April 2028. Pin `"@hubspot/ui-extensions": "1.1.0"` and `"react": "18.3.1"` (the exact peer version).
 
 | v0 | v1 |
 |---|---|
@@ -90,5 +90,5 @@ v1 was released in November 2026. Support windows: v0 until March 2028, v1 until
 | `Flex direction="column"` for vertical layout | `Stack` (keep `Flex` for horizontal) |
 | `readonly`, `size="default"`, `valueMax` | `readOnly`, `size="medium"`, `maxValue` (full table in the docs) |
 
-- In 1.0.1 the v0 hook names are still exported but marked `@deprecated`.
+- In 1.1.0 the v0 hook names are still exported but marked `@deprecated`.
 - Find them with: `grep -rnE '\b(useCrmProperties|useAssociations|useCrmSearch)\b' src/`.

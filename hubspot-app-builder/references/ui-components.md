@@ -2,19 +2,19 @@
 
 > Official docs: https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensions/ui-components/overview
 >
-> Reference version: `@hubspot/ui-extensions` **1.0.1**. Prop names below come from the package's `.d.ts` files. If a prop isn't listed here, check the component's docs page before using it.
+> Reference version: `@hubspot/ui-extensions` **1.1.0**. Prop names below come from the package's `.d.ts` files. If a prop isn't listed here, check the component's docs page before using it.
 
 ## Import Sources
 
 ```js
 // Standard components (all extension points)
-import { Text, Button, Flex, Stack } from "@hubspot/ui-extensions";
+import { Text, Button, Flex, Stack, SideNav, SideNavItem } from "@hubspot/ui-extensions";
 
 // CRM data + CRM action components (app cards only, see location rules below)
 import { CrmPropertyList, CrmAssociationTable, CrmActionButton } from "@hubspot/ui-extensions/crm";
 
 // App pages (type "page"): router + page components
-import { createPageRouter, PageRoutes, PageLink, PageHeader, PageTitle, PageBreadcrumbs, usePageRoute } from "@hubspot/ui-extensions/pages";
+import { createPageRouter, PageRoutes, PageLink, PageHeader, PageTitle, PageBreadcrumbs, PageSideNavItem, usePageRoute } from "@hubspot/ui-extensions/pages";
 
 // Legacy app home (type "page" + location "home") header actions
 import { HeaderActions, PrimaryHeaderActionButton, SecondaryHeaderActionButton } from "@hubspot/ui-extensions/pages/home";
@@ -266,6 +266,8 @@ All text-like inputs (`Input`, `TextArea`, `SearchInput`, `DateInput`, `TimeInpu
 | `Tabs` | `selected`, `defaultSelected`, `onSelectedChange(id)`, `variant` (`default`/`enclosed`), `fill` | Children are `<Tab tabId title tooltip disabled>`. Use `variant="default"` on settings pages |
 | `Accordion` | `title` (required), `defaultOpen`, `open`, `onClick`, `disabled`, `size` | Collapsible section |
 | `StepIndicator` | `stepNames` (required), `currentStep`, `direction`, `variant` (`default`/`compact`/`flush`), `circleSize`, `onClick(stepIndex)` | Use `stepNames`, not `steps` |
+| `SideNav` | `value` (active item), `headingText`, `aria-label`, `variant` (`default`/`on-dark`), `divider` | Stable since 1.1.0 (was experimental). Children: `SideNavItem` and `PageSideNavItem` only. No docs page yet: props from the 1.1.0 `.d.ts` |
+| `SideNavItem` | `title`, `value`, `active`, `disabled`, `href`, `external`, `onClick`, `iconLeft`/`iconRight` (`Icon` only), `count`, `statusDot` (`default`/`success`/`warning`/`danger`/`info`), `defaultOpen`, `open`, `onOpenChange` | Nested `SideNavItem`s render as a collapsible group. In app pages, use `PageSideNavItem` (from `/pages`) to navigate between routes |
 
 ```jsx
 <Tabs defaultSelected="overview" onSelectedChange={(id) => setTab(id)}>
@@ -280,6 +282,14 @@ All text-like inputs (`Input`, `TextArea`, `SearchInput`, `DateInput`, `TimeInpu
 <StepIndicator stepNames={["Connect", "Configure", "Done"]} currentStep={1} />
 ```
 
+```jsx
+// SideNav / SideNavItem from "@hubspot/ui-extensions" (stable since 1.1.0)
+<SideNav headingText="Settings" value={section}>
+  <SideNavItem title="General" value="general" onClick={() => setSection("general")} />
+  <SideNavItem title="Sync" value="sync" count={3} onClick={() => setSection("sync")} />
+</SideNav>
+```
+
 ### Overlays (Modal, Panel)
 
 Attach them with the `overlay` prop of `Button`, `LoadingButton`, `Link`, `Tag`, `Image` or `Dropdown.ButtonItem`. Close them with `actions.closeOverlay(id)`. See [`ui-extensions-sdk.md`](ui-extensions-sdk.md#overlays).
@@ -291,11 +301,11 @@ Attach them with the `overlay` prop of `Button`, `LoadingButton`, `Link`, `Tag`,
 
 ### Exported but undocumented
 
-`Card`, `FileUpload` and `FileViewer` are exported by 1.0.1 but have no docs page (unverified). Don't use them in production until HubSpot documents them.
+`Card`, `FileUpload` and `FileViewer` are exported by 1.1.0 but have no docs page (unverified). Don't use them in production until HubSpot documents them.
 
 ## CRM Data Components
 
-Import from `@hubspot/ui-extensions/crm`. They are only for **app cards**. Docs: "These components can only be placed in the middle column of CRM records" (`crm.record.tab`). The 1.0.1 types also allow them in `crm.preview` and `helpdesk.sidebar`. They are **never** allowed in `crm.record.sidebar`; in the sidebar, use the record hooks plus standard components.
+Import from `@hubspot/ui-extensions/crm`. They are only for **app cards**. Docs: "These components can only be placed in the middle column of CRM records" (`crm.record.tab`). The 1.1.0 types also allow them in `crm.preview` and `helpdesk.sidebar`. They are **never** allowed in `crm.record.sidebar`; in the sidebar, use the record hooks plus standard components.
 
 | Component | Key Props |
 |---|---|
@@ -351,7 +361,7 @@ Import from `@hubspot/ui-extensions/crm`. They are allowed in app cards. In `crm
 | `PAGE_APP_LINK` | `path` (starts with `/`), optional `external` |
 | `EXTERNAL_URL` | `href` (http/https) |
 
-`OPEN_RECORD_CREATOR_FORM` and `OPEN_WORKFLOW_ENROLLMENT_MODAL` exist in the 1.0.1 types but are not in the docs (unverified).
+`OPEN_RECORD_CREATOR_FORM` and `OPEN_WORKFLOW_ENROLLMENT_MODAL` exist in the 1.1.0 types but are not in the docs (unverified).
 
 ```jsx
 <CrmActionButton
@@ -386,6 +396,7 @@ Used in app pages (`"type": "page"`, registered with `hubspot.extend<'pages'>`).
 | `PageHeader` | Header actions: `PageHeader.PrimaryAction`, `PageHeader.SecondaryActions`, `PageHeader.Link` (`href`/`onClick`), `PageHeader.PageLink` (`to`, `params`) |
 | `PageTitle` | Page title (string child) |
 | `PageBreadcrumbs` | `PageBreadcrumbs.PageLink` (`to`, `params`), `PageBreadcrumbs.Current` |
+| `PageSideNavItem` | Since 1.1.0. Side-nav item that navigates to an app page: `title`, `to`, `params?`, `exact?` (default `true`), `active?`, `disabled?`, `onClick?`, `iconLeft?`/`iconRight?` (`Icon` only), `count?`, `statusDot?`, `defaultOpen?`/`open?`/`onOpenChange?`; children: nested `PageSideNavItem`/`SideNavItem`. Place inside `SideNav` |
 | `usePageRoute()` | Returns `{ path, routeId, params }` |
 
 ```tsx
@@ -418,11 +429,11 @@ const PageRouter = createPageRouter(
 hubspot.extend<"pages">(() => <PageRouter />);
 ```
 
-**Legacy app home** (`"type": "page"` + `"location": "home"`) uses `HeaderActions`, which wraps one `PrimaryHeaderActionButton` and any number of `SecondaryHeaderActionButton`s. Import them from `@hubspot/ui-extensions/pages/home`. Each button takes `onClick`, `href`, `disabled` and `overlay`. Prefer app pages for new work.
+**Legacy app home** (`"type": "page"` + `"location": "home"`) uses `HeaderActions`, which wraps one `PrimaryHeaderActionButton` and any number of `SecondaryHeaderActionButton`s. Import them from `@hubspot/ui-extensions/pages/home`. Each button takes `onClick`, `href`, `disabled` and `overlay`. Since 1.1.0 the `HeaderActionsProps` and `HeaderActionButtonProps` types are marked `@deprecated` ("Use `PageHeaderProps` with `PageHeader`" / "`PageHeaderLinkProps` with `PageHeader.Link`" from `@hubspot/ui-extensions/pages`). Prefer app pages for new work.
 
 ## Experimental Components (not for production)
 
-`@hubspot/ui-extensions/experimental` exports `Grid`, `GridItem`, `Center`, `ExpandableText`, `FileInput`, `Iframe`, `MediaObject`, `SettingsView`, `SideNav`, `SideNavItem` and `Stack2`. It also exports experimental variants of stable components (for example, a `Box`/`Flex` that accept padding props). The package README says experimental components "aren't in a stable API state and aren't yet ready for production use".
+`@hubspot/ui-extensions/experimental` exports `Grid`, `GridItem`, `Center`, `ExpandableText`, `FileInput`, `Iframe`, `MediaObject`, `PieChart` (added in 1.1.0), `SettingsView` and `Stack2`. `SideNav`/`SideNavItem` moved to the stable export in 1.1.0, and the `@hubspot/ui-extensions/experimental/pages` entry point was removed (`PageSideNavItem` is now in `@hubspot/ui-extensions/pages`). It also exports experimental variants of stable components (for example, a `Box`/`Flex` that accept padding props). The package README says experimental components "aren't in a stable API state and aren't yet ready for production use".
 
 ## Figma Design Kit
 

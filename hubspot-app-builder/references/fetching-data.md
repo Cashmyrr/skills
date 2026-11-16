@@ -26,7 +26,7 @@ For data from the current CRM record, you don't need a backend. Use the SDK hook
 
 ## Method signature
 
-From `@hubspot/ui-extensions` 1.0.1 types:
+From `@hubspot/ui-extensions` 1.1.0 types:
 
 ```ts
 interface HubSpotFetchOptions {
