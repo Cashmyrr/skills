@@ -17,7 +17,7 @@ This skill guides the development of full HubSpot apps on the developer platform
 These apply to every HubSpot project. Details, rationale and examples: [`references/best-practices.md`](references/best-practices.md).
 
 1. **Current platform version** (`"platformVersion": "2026.09"`; `hs project create` still defaults to `2026.03`), **CLI 8.16.0+**, and **pinned dependencies**, never `"latest"`.
-2. **UI extensions use `@hubspot/ui-extensions` 1.x** (`1.0.1` with `react` `18.3.1`) and the v1 hooks (`useRecordPropertiesCurrent`, `useRecordAssociationsCurrent`, `useRecordSearch`, `useExtensionApi`).
+2. **UI extensions use `@hubspot/ui-extensions` 1.x** (`1.1.0` with `react` `18.3.1`) and the v1 hooks (`useRecordPropertiesCurrent`, `useRecordAssociationsCurrent`, `useRecordSearch`, `useExtensionApi`).
 3. **Build profiles per environment** (`hs project profile add dev|qa|prod`); develop in **developer test accounts**, never in a client's production portal.
 4. **No secret in front-end code or in the repo.** Secrets go in serverless function secrets or your backend.
 5. **Least-privilege scopes**: only what the code calls; extras go in `optionalScopes` (OAuth only).
@@ -553,7 +553,7 @@ Requires HubSpot CLI **8.2.0+**. Setup is interactive; the standalone mode runs 
 
 ## Available UI Components
 
-Import from `@hubspot/ui-extensions` (stable in 1.0.1):
+Import from `@hubspot/ui-extensions` (stable in 1.1.0):
 - **Layout**: `Flex`, `Stack`, `Inline`, `Box`, `AutoGrid`, `Divider`, `Spacer`, `Tile`
 - **Text/Display**: `Text`, `Heading`, `Link`, `Image`, `Icon`, `Illustration`, `Tag`, `StatusTag`, `List`
 - **Input**: `Input`, `TextArea`, `SearchInput`, `NumberInput`, `CurrencyInput`, `StepperInput`, `DateInput`, `TimeInput`, `Select`, `MultiSelect`, `Checkbox`, `RadioButton`, `Toggle`, `ToggleGroup`
@@ -563,13 +563,13 @@ Import from `@hubspot/ui-extensions` (stable in 1.0.1):
 - **Overlay**: `Modal`, `ModalBody`, `ModalFooter`, `Panel`, `PanelBody`, `PanelSection`, `PanelFooter`
 - **Data**: `Table`, `TableHead`, `TableHeader`, `TableBody`, `TableFooter`, `TableRow`, `TableCell`, `DescriptionList`, `DescriptionListItem`, `Statistics`, `StatisticsItem`, `StatisticsTrend`, `ScoreCircle`
 - **Charts**: `BarChart`, `LineChart`
-- **Navigation**: `Tabs`, `Tab`, `Accordion`, `StepIndicator`
+- **Navigation**: `Tabs`, `Tab`, `Accordion`, `StepIndicator`, `SideNav`, `SideNavItem` (stable since 1.1.0; no docs page yet)
 
 Import from `@hubspot/ui-extensions/crm` (app cards only; none of the data components in `crm.record.sidebar`):
 - **CRM Data**: `CrmPropertyList`, `CrmAssociationTable`, `CrmAssociationPivot`, `CrmAssociationPropertyList`, `CrmAssociationStageTracker`, `CrmDataHighlight`, `CrmReport`, `CrmStageTracker`, `CrmStatistics`
 - **CRM Actions**: `CrmActionButton`, `CrmActionLink`, `CrmCardActions` (each takes `actionType` + `actionContext`)
 
-Import from `@hubspot/ui-extensions/pages` (app pages): `createPageRouter`, `PageRoutes`, `PageLink`, `PageHeader`, `PageTitle`, `PageBreadcrumbs`, `usePageRoute`.
+Import from `@hubspot/ui-extensions/pages` (app pages): `createPageRouter`, `PageRoutes`, `PageLink`, `PageHeader`, `PageTitle`, `PageBreadcrumbs`, `PageSideNavItem` (since 1.1.0), `usePageRoute`.
 
 **Do not use:**
 - These names don't exist: `Badge`, `IconButton`, `FormField`.
@@ -643,7 +643,7 @@ Full example and execution details: [`references/features.md`](references/featur
   "name": "my-card",
   "version": "0.1.0",
   "dependencies": {
-    "@hubspot/ui-extensions": "1.0.1",
+    "@hubspot/ui-extensions": "1.1.0",
     "react": "18.3.1"
   },
   "devDependencies": {
@@ -762,7 +762,7 @@ logger.error("Error message");
 - **`references/oauth.md`**: OAuth for `oauth` apps: config, install URL, code exchange, token storage and refresh, uninstall, other credentials (static token, service keys, personal access keys), MCP connectors for the remote HubSpot MCP server
 - **`references/scopes.md`**: OAuth scopes by category, granular-scope migration, deprecated scopes, scopes unsupported under user-level access
 - **`references/ui-extensions-sdk.md`**: `hubspot.extend`, context, actions, v1 hooks, formatting and pagination, overlays, logger, 0.x → 1.x migration
-- **`references/ui-components.md`**: props and examples for standard, CRM data, CRM action and app pages components (`@hubspot/ui-extensions` 1.0.1); loading/error/empty pattern
+- **`references/ui-components.md`**: props and examples for standard, CRM data, CRM action and app pages components (`@hubspot/ui-extensions` 1.1.0); loading/error/empty pattern
 - **`references/fetching-data.md`**: `hubspot.fetch()`: differences from native fetch, signature, limits, `permittedUrls`, request metadata and signing, Authorization header, local dev proxy, monitoring
 - **`references/features.md`**: app pages and legacy app home, settings page, serverless functions, app events, app objects and associations, custom workflow actions, agent tools (BETA), webhooks, Webhooks Journal, telemetry
 - **`references/signature-validation.md`**: which requests use v3 or v2, how each is computed, raw-body capture, validation code with Node `crypto` and `@hubspot/api-client`

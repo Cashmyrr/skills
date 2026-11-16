@@ -24,7 +24,7 @@ Sources are the official HubSpot docs linked at the bottom. Items marked *(Cashm
   ```json
   {
     "dependencies": {
-      "@hubspot/ui-extensions": "1.0.1",
+      "@hubspot/ui-extensions": "1.1.0",
       "react": "18.3.1"
     }
   }
@@ -181,7 +181,7 @@ Rules:
   `useRecordPropertiesCurrent` returns `{ properties, error, isLoading, isRefetching, refetch }`. Property values are `string | null`.
 - **Use the v1 SDK hooks**: `useExtensionApi<'crm.record.tab'>()`, `useRecordPropertiesCurrent`, `useRecordAssociationsCurrent` (`pageSize`) and `useRecordSearch`.
   - Prefer them to the `fetchCrmObjectProperties` action.
-  - The v0 names `useCrmProperties` and `useAssociations` are still exported in 1.0.1 but marked deprecated. Migrate them (see [`migrations.md`](migrations.md)).
+  - The v0 names `useCrmProperties` and `useAssociations` are still exported in 1.1.0 but marked deprecated. Migrate them (see [`migrations.md`](migrations.md)).
 - **Call hooks at component level**, never inside handlers, loops or conditions.
 - **Use `hubspot.fetch()`**, never browser `fetch()`.
   - `body` is a plain object: no `JSON.stringify()`, no manual `Content-Type`.
@@ -285,4 +285,4 @@ Rules:
 - [Serverless functions reference](https://developers.hubspot.com/docs/apps/developer-platform/add-features/serverless-functions/reference)
 - [Webhooks API guide](https://developers.hubspot.com/docs/api-reference/latest/webhooks/guide)
 - [Manage apps in HubSpot (auto-deploy, installs)](https://developers.hubspot.com/docs/apps/developer-platform/build-apps/manage-apps-in-hubspot)
-- `@hubspot/ui-extensions@1.0.1` package types (hook return shapes, component props)
+- `@hubspot/ui-extensions@1.1.0` package types (hook return shapes, component props)

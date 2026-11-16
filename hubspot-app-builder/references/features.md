@@ -115,7 +115,7 @@ hubspot.extend<"pages">(() => <PageRouter />);
 
 > Official docs: https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensions/extension-points/app-home-page
 
-Still supported, but HubSpot recommends app pages. It is a `page` component with `"location": "home"`, registered with `hubspot.extend<"home">`. Header action components (`HeaderActions`, `PrimaryHeaderActionButton`, `SecondaryHeaderActionButton`) come from `@hubspot/ui-extensions/pages/home`.
+Still supported, but HubSpot recommends app pages. It is a `page` component with `"location": "home"`, registered with `hubspot.extend<"home">`. Header action components (`HeaderActions`, `PrimaryHeaderActionButton`, `SecondaryHeaderActionButton`) come from `@hubspot/ui-extensions/pages/home`. Since 1.1.0 their prop types are marked `@deprecated` in favor of `PageHeader` / `PageHeader.Link` from `@hubspot/ui-extensions/pages`.
 
 ```json
 {

@@ -3,7 +3,7 @@
 > Official docs: https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensions/ui-extensions-sdk/overview
 > (context, actions, hooks, utilities, logging, versioning pages under the same path)
 >
-> Reference version: `@hubspot/ui-extensions` **1.0.1**, which requires `react` **18.3.1** exactly as a peer dependency.
+> Reference version: `@hubspot/ui-extensions` **1.1.0**, which requires `react` **18.3.1** exactly as a peer dependency.
 
 ## Registering the Extension
 
@@ -44,7 +44,7 @@ Read it with `useExtensionContext<location>()`, `useExtensionApi<location>().con
 | `location` | String | `crm.record.tab`, `crm.record.sidebar`, `crm.preview`, `helpdesk.sidebar`, `settings`, `home`, `pages` or `crm.bulkActions` (BETA) |
 | `portal.id` | Number | HubSpot account ID |
 | `portal.timezone` | String | Account timezone |
-| `portal.dataHostingLocation` | String | `na1`, `na2`, `na3`, `ap1` or `eu1`. Documented, but not in the 1.0.1 type definitions |
+| `portal.dataHostingLocation` | String | `na1`, `na2`, `na3`, `ap1` or `eu1`. Documented, but not in the 1.1.0 type definitions |
 | `user.id` | Number | User ID |
 | `user.email` | String | Primary email |
 | `user.emails` | Array | All of the user's emails |
@@ -67,7 +67,7 @@ Read it with `useExtensionContext<location>()`, `useExtensionApi<location>().con
 | `extension.appName` | String | App name |
 | `extension.cardTitle` | String | Card title |
 
-The 1.0.1 types also declare an optional `extension` field for `settings`, `home`, `pages` and `crm.bulkActions`. The docs list it for CRM locations only.
+The 1.1.0 types also declare an optional `extension` field for `settings`, `home`, `pages` and `crm.bulkActions`. The docs list it for CRM locations only.
 
 ### Bulk action context (BETA)
 
@@ -255,7 +255,7 @@ logger.error("Error");
 
 ## Migrating from 0.x to 1.x
 
-Upgrade with `npm install @hubspot/ui-extensions@^1`. Pin `1.0.1` in `package.json` together with `react` `18.3.1`. Support: v0 through March 2028; v1 (released November 2026) through April 2028.
+Upgrade with `npm install @hubspot/ui-extensions@^1`. Pin `1.1.0` in `package.json` together with `react` `18.3.1`. Support: v0 through March 2028; v1 (released November 2026) through April 2028.
 
 | 0.x | 1.x |
 |---|---|
@@ -274,7 +274,7 @@ Upgrade with `npm install @hubspot/ui-extensions@^1`. Pin `1.0.1` in `package.js
 | `Form` `preventDefault` | removed (always prevented) |
 | Chart `options.colors` | `options.colorList` |
 
-The old hook names are still exported (deprecated) in 1.0.1. Don't use them in new code. To find them in an existing project, run `grep -r "useCrmProperties\|useAssociations\|useCrmSearch" src/`.
+The old hook names are still exported (deprecated) in 1.1.0. Don't use them in new code. To find them in an existing project, run `grep -r "useCrmProperties\|useAssociations\|useCrmSearch" src/`.
 
 ## Best Practices
 
