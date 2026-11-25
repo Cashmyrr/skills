@@ -1,5 +1,5 @@
 /**
- * Complete App Card Example — HubSpot Platform 2026.09, @hubspot/ui-extensions 1.1.0
+ * Complete App Card Example — HubSpot Platform 2026.09, @hubspot/ui-extensions 1.2.0
  * Note: app cards are not supported in user-level apps (see "User-Level Access" in SKILL.md).
  *
  * File: src/app/cards/ContactEnrichment.jsx
