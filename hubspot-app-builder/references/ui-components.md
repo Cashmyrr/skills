@@ -2,7 +2,7 @@
 
 > Official docs: https://developers.hubspot.com/docs/apps/developer-platform/add-features/ui-extensions/ui-components/overview
 >
-> Reference version: `@hubspot/ui-extensions` **1.1.0**. Prop names below come from the package's `.d.ts` files. If a prop isn't listed here, check the component's docs page before using it.
+> Reference version: `@hubspot/ui-extensions` **1.2.0**. Prop names below come from the package's `.d.ts` files. If a prop isn't listed here, check the component's docs page before using it.
 
 ## Import Sources
 
@@ -214,7 +214,7 @@ All text-like inputs (`Input`, `TextArea`, `SearchInput`, `DateInput`, `TimeInpu
 | `DescriptionList` | `direction` (`row`/`column`) | Children are `<DescriptionListItem label="…">` (no `items` prop) |
 | `Statistics` | `children` | Children are `<StatisticsItem label number>`, optionally containing `<StatisticsTrend value direction="increase"/"decrease" color>` |
 | `ScoreCircle` | `score` (required) | Only prop |
-| `BarChart` / `LineChart` | `data` (rows), `axes` (`{ x: { field, fieldType, label? }, y: { … }, options? }`), `options` (`title`, `showLegend`, `showTooltips`, `showDataLabels`, `colorList`) | `fieldType`: `category`/`linear`/`datetime`. `options.colors` was removed in 1.x; use `colorList` |
+| `BarChart` / `LineChart` | `data` (rows), `axes` (`{ x: { field, fieldType, label?, format? }, y: { … }, options? }`), `options` (`title`, `showLegend`, `showTooltips`, `showDataLabels`, `colorList`) | `fieldType`: `category`/`linear`/`datetime`. `options.colors` was removed in 1.x; use `colorList`. Since 1.2.0, axis `format` (only on `linear` axes; display only, data unchanged): `{ type: "currency", currencyCode?, precision? }` (ISO 4217 code, portal default currency if omitted), `{ type: "number", precision? }` (thousands separators) or `{ type: "percentage", precision? }` (`0.25` → `25%`); `precision` 0–20. From the 1.2.0 `.d.ts`; charts docs page not checked (unverified) |
 
 ```jsx
 <Table bordered paginated pageCount={totalPages} page={page} onPageChange={setPage}>
@@ -257,6 +257,18 @@ All text-like inputs (`Input`, `TextArea`, `SearchInput`, `DateInput`, `TimeInpu
   }}
   options={{ showLegend: false }}
 />
+
+// Since 1.2.0: format a linear axis (ticks, data labels, tooltips)
+<BarChart
+  data={[
+    { stage: "New", amount: 12000 },
+    { stage: "Won", amount: 4500 },
+  ]}
+  axes={{
+    x: { field: "stage", fieldType: "category", label: "Stage" },
+    y: { field: "amount", fieldType: "linear", label: "Amount", format: { type: "currency", currencyCode: "EUR", precision: 0 } },
+  }}
+/>
 ```
 
 ### Navigation & Containers
@@ -266,7 +278,7 @@ All text-like inputs (`Input`, `TextArea`, `SearchInput`, `DateInput`, `TimeInpu
 | `Tabs` | `selected`, `defaultSelected`, `onSelectedChange(id)`, `variant` (`default`/`enclosed`), `fill` | Children are `<Tab tabId title tooltip disabled>`. Use `variant="default"` on settings pages |
 | `Accordion` | `title` (required), `defaultOpen`, `open`, `onClick`, `disabled`, `size` | Collapsible section |
 | `StepIndicator` | `stepNames` (required), `currentStep`, `direction`, `variant` (`default`/`compact`/`flush`), `circleSize`, `onClick(stepIndex)` | Use `stepNames`, not `steps` |
-| `SideNav` | `value` (active item), `headingText`, `aria-label`, `variant` (`default`/`on-dark`), `divider` | Stable since 1.1.0 (was experimental). Children: `SideNavItem` and `PageSideNavItem` only. No docs page yet: props from the 1.1.0 `.d.ts` |
+| `SideNav` | `value` (active item), `headingText`, `aria-label`, `variant` (`default`/`on-dark`), `divider` | Stable since 1.1.0 (was experimental). Children: `SideNavItem` and `PageSideNavItem` only. No docs page yet: props from the 1.1.0/1.2.0 `.d.ts` |
 | `SideNavItem` | `title`, `value`, `active`, `disabled`, `href`, `external`, `onClick`, `iconLeft`/`iconRight` (`Icon` only), `count`, `statusDot` (`default`/`success`/`warning`/`danger`/`info`), `defaultOpen`, `open`, `onOpenChange` | Nested `SideNavItem`s render as a collapsible group. In app pages, use `PageSideNavItem` (from `/pages`) to navigate between routes |
 
 ```jsx
@@ -301,11 +313,11 @@ Attach them with the `overlay` prop of `Button`, `LoadingButton`, `Link`, `Tag`,
 
 ### Exported but undocumented
 
-`Card`, `FileUpload` and `FileViewer` are exported by 1.1.0 but have no docs page (unverified). Don't use them in production until HubSpot documents them.
+`Card`, `FileUpload` and `FileViewer` are exported by 1.2.0 but have no docs page (unverified). Don't use them in production until HubSpot documents them.
 
 ## CRM Data Components
 
-Import from `@hubspot/ui-extensions/crm`. They are only for **app cards**. Docs: "These components can only be placed in the middle column of CRM records" (`crm.record.tab`). The 1.1.0 types also allow them in `crm.preview` and `helpdesk.sidebar`. They are **never** allowed in `crm.record.sidebar`; in the sidebar, use the record hooks plus standard components.
+Import from `@hubspot/ui-extensions/crm`. They are only for **app cards**. Docs: "These components can only be placed in the middle column of CRM records" (`crm.record.tab`). The 1.2.0 types also allow them in `crm.preview` and `helpdesk.sidebar`. They are **never** allowed in `crm.record.sidebar`; in the sidebar, use the record hooks plus standard components.
 
 | Component | Key Props |
 |---|---|
@@ -361,7 +373,7 @@ Import from `@hubspot/ui-extensions/crm`. They are allowed in app cards. In `crm
 | `PAGE_APP_LINK` | `path` (starts with `/`), optional `external` |
 | `EXTERNAL_URL` | `href` (http/https) |
 
-`OPEN_RECORD_CREATOR_FORM` and `OPEN_WORKFLOW_ENROLLMENT_MODAL` exist in the 1.1.0 types but are not in the docs (unverified).
+`OPEN_RECORD_CREATOR_FORM` and `OPEN_WORKFLOW_ENROLLMENT_MODAL` exist in the 1.2.0 types but are not in the docs (unverified).
 
 ```jsx
 <CrmActionButton
